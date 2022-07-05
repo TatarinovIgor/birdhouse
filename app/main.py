@@ -33,4 +33,3 @@ def get_balance():
     return "<p>Get Balance here</p>"
 
 
-app.run()
