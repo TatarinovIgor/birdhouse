@@ -24,10 +24,12 @@ def create_wallet_request():
     last_name = request.args.get("last_name")
     email = request.args.get("email")
     phone = request.args.get("phone")
-    create_wallet_send_data(secret_key, uid, first_name, last_name, email, phone)
-    return jsonify(
-        message="success"
-    )
+    #create_wallet_send_data(secret_key, uid, first_name, last_name, email, phone)
+    if secret_key == key:
+        return jsonify(
+            message="success"
+        )
+    return "<p>Key is invalid</p>"
 
 
 @app.route('/create_wallet_AT', methods=['GET'])
