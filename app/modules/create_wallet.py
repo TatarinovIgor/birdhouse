@@ -13,5 +13,6 @@ def create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone):
                'X-Session-ID': session_id}
     # make a request
     request = requests.get(URL, headers=headers)
+    return {"message": "success"}
 
 

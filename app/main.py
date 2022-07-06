@@ -21,20 +21,8 @@ def create_wallet_request():
     # inside should be parameters entered during registration
     decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
 
-
-    # request body
-    uid = request.args.get('uid')
-    first_name = request.args.get("first_name")
-    last_name = request.args.get("last_name")
-    email = request.args.get("email")
-    phone = request.args.get("phone_number")
-    create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
-    if decoded["uid"] == uid and decoded["first_name"] == first_name:
-        return jsonify(
-            message="success"
-        )
     return jsonify(
-        message="invalid key or parameters"
+        create_wallet_send_data(jwtToken)
     )
 
 
