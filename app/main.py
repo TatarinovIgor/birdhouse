@@ -19,7 +19,7 @@ def create_wallet_request():
     jwtToken = request.args.get('auth_key')
 
     # inside should be parameters entered during registration
-    decoded = jwt.decode(jwtToken, str.encode("secret"), algorithms=["HS256"])
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
 
 
     # request body
@@ -44,7 +44,7 @@ def create_wallet_requestAT():
     jwtToken = request.args.get('X-Auth-Token')
     sessionID = request.args.get('X-Session-ID')
 
-    decoded = jwt.decode(jwtToken, str.encode("secret"), algorithms=["HS256"])
+    decoded = jwt.decode(str.encode(jwtToken), "secret", algorithms=["HS256"])
 
     return jsonify(
         external_id=decoded["uid"],
