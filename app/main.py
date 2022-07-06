@@ -23,7 +23,7 @@ def create_wallet_request():
     first_name = request.args.get("first_name")
     last_name = request.args.get("last_name")
     email = request.args.get("email")
-    phone = request.args.get("phone")
+    phone = request.args.get("mobile_phone")
     #create_wallet_send_data(secret_key, uid, first_name, last_name, email, phone)
     if secret_key == key:
         return jsonify(
