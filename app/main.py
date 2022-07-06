@@ -28,13 +28,13 @@ def create_wallet_request():
     last_name = request.args.get("last_name")
     email = request.args.get("email")
     phone = request.args.get("phone_number")
-    create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
+    #create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
     if decoded["uid"] == uid and decoded["first_name"] == first_name:
         return jsonify(
             message="success"
         )
     return jsonify(
-        message="invalid key"
+        message="invalid key or parameters"
     )
 
 
