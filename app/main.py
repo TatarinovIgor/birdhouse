@@ -29,7 +29,7 @@ def create_wallet_request():
             message="success"
         )
     return jsonify(
-        message=request.headers
+        message=request.headers.get('test')
     )
 
 
