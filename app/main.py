@@ -28,7 +28,7 @@ def create_wallet_request():
     last_name = request.args.get("last_name")
     email = request.args.get("email")
     phone = request.args.get("phone_number")
-    #create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
+    create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
     if decoded["uid"] == uid and decoded["first_name"] == first_name:
         return jsonify(
             message="success"
@@ -40,9 +40,22 @@ def create_wallet_request():
 
 @app.route('/create_wallet_AT', methods=['GET'])
 def create_wallet_requestAT():
+
+    jwtToken = request.args.get('X-Auth-Token')
+    sessionID = request.args.get('X-Session-ID')
+
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+
+    return jsonify(
+        external_id=decoded["uid"],
+        first_name=decoded["first_name"],
+        last_name=decoded["last_name"],
+        email=decoded["email"],
+        phone=decoded["phone"]
+    )
     # request headers
-    X_Auth_Token = request.headers.get('X-Auth-Token')
-    X_Session_ID = request.headers.get('X-Session-ID')
+    #X_Auth_Token = request.headers.get('X-Auth-Token')
+    #X_Session_ID = request.headers.get('X-Session-ID')
     # request body
 
     # authentication (key validation)
