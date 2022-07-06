@@ -15,7 +15,7 @@ def home():
 def create_wallet_request():
     # request headers
     # Should be JWT, with credentials and secret key
-    secret_key = request.headers.get('auth_key')
+    secret_key = request.args.get('auth_key')
 
     # request body
     uid = request.args.get('uid')
