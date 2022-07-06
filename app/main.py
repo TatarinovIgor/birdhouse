@@ -29,13 +29,9 @@ def create_wallet_request():
     email = request.args.get("email")
     phone = request.args.get("phone_number")
     create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
-    if jwtToken == key:
-        if decoded["uid"] == uid and decoded["first_name"] == first_name:
-            return jsonify(
-                message="success"
-            )
+    if decoded["uid"] == uid and decoded["first_name"] == first_name:
         return jsonify(
-            message="invalid key or data"
+            message="success"
         )
     return jsonify(
         message="invalid key"
