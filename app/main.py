@@ -1,3 +1,4 @@
+import jwt
 from flask import Flask, request, jsonify
 
 from app.modules.create_wallet import create_wallet_send_data
@@ -15,18 +16,26 @@ def home():
 def create_wallet_request():
     # request headers
     # Should be JWT, with credentials and secret key
-    secret_key = request.args.get('auth_key')
+    jwtToken = request.args.get('auth_key')
+
+    # inside should be parameters entered during registration
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+
 
     # request body
     uid = request.args.get('uid')
     first_name = request.args.get("first_name")
     last_name = request.args.get("last_name")
     email = request.args.get("email")
-    phone = request.args.get("mobile_phone")
-    #create_wallet_send_data(secret_key, uid, first_name, last_name, email, phone)
-    if secret_key == key:
+    phone = request.args.get("phone_number")
+    create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone)
+    if jwtToken == key:
+        if decoded["uid"] == uid and decoded["first_name"] == first_name:
+            return jsonify(
+                message="success"
+            )
         return jsonify(
-            message="success"
+            message="invalid key or data"
         )
     return jsonify(
         message="invalid key"
@@ -61,7 +70,7 @@ def create_wallet_requestAT():
     #        email=email_response,
     #        phone=phone_response,
     #    )
-    return "<p>Key is invalid</p>"
+    return "msg"
 
 @app.route('/top_up', methods=['GET'])
 def top_up():
