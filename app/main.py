@@ -12,14 +12,14 @@ def home():
     return "<h1>Distant Reading Archive</h1><p>This site is a prototype API for distant reading of science fiction novels.</p>"
 
 
-@app.route('/create_wallet_BH', methods=['POST'])
+@app.route('/create_wallet_bh', methods=['POST'])
 def create_wallet_request():
     # request headers
     # Should be JWT, with credentials and secret key
     jwtToken = request.args.get('auth_key')
 
     # inside should be parameters entered during registration
-    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+    decoded = jwt.decode(jwtToken, str.encode("secret"), algorithms=["HS256"])
 
 
     # request body
@@ -38,13 +38,13 @@ def create_wallet_request():
     )
 
 
-@app.route('/create_wallet_AT', methods=['GET'])
+@app.route('/create_wallet_at', methods=['GET'])
 def create_wallet_requestAT():
 
     jwtToken = request.args.get('X-Auth-Token')
     sessionID = request.args.get('X-Session-ID')
 
-    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+    decoded = jwt.decode(jwtToken, str.encode("secret"), algorithms=["HS256"])
 
     return jsonify(
         external_id=decoded["uid"],

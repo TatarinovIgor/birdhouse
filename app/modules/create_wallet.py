@@ -15,4 +15,3 @@ def create_wallet_send_data(jwtToken, uid, first_name, last_name, email, phone):
     request = requests.get(URL, headers=headers)
 
 
-
