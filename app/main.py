@@ -12,7 +12,7 @@ def home():
     return "<h1>Distant Reading Archive</h1><p>This site is a prototype API for distant reading of science fiction novels.</p>"
 
 
-@app.route('/create_wallet_BH', methods=['GET'])
+@app.route('/create_wallet_BH', methods=['POST'])
 def create_wallet_request():
     # request headers
     # Should be JWT, with credentials and secret key
