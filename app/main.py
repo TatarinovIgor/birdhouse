@@ -1,11 +1,11 @@
 import jwt
 from flask import Flask, request, jsonify
 
-from app.modules.create_wallet import create_wallet_send_data
+from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data
 
 app = Flask(__name__)
-
 key = "secret"
+
 
 @app.route('/', methods=['GET'])
 def home():
@@ -28,7 +28,6 @@ def create_wallet_request():
 
 @app.route('/create_wallet_at', methods=['GET'])
 def create_wallet_requestAT():
-
     jwtToken = request.headers.get('X-Auth-Token', type=str)
     sessionID = request.headers.get('X-Session-ID', type=str)
 
@@ -39,35 +38,28 @@ def create_wallet_requestAT():
         first_name=decoded["first_name"],
         last_name=decoded["last_name"],
         email=decoded["email"],
-        phone=decoded["phone"]
+        phone=decoded["phone"],
     )
-    # request headers
-    #X_Auth_Token = request.headers.get('X-Auth-Token')
-    #X_Session_ID = request.headers.get('X-Session-ID')
-    # request body
 
-    # authentication (key validation)
-    #first_name_response, last_name_response, email_response, phone_response = create_wallet(secret_key, uid, first_name,
-    #                                                                                       last_name, email, phone)
 
-    #uid = request.args.get('uid')
-    #first_name = request.args.get("first_name")
-    #last_name = request.args.get("last_name")
-    #email = request.args.get("email")
-    #phone = request.args.get("phone")
+@app.route('/sign_in_wallet_bh', methods=['POST'])
+def sign_up_wallet_BH():
+    jwtToken = request.args.get('auth_key')
 
-    # authentication (key validation)
-    #first_name_response, last_name_response, email_response, phone_response = create_wallet(secret_key, uid, first_name,
-    #                                                                                        last_name, email, phone)
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+    return jsonify(
+        sign_in_wallet_send_data(jwtToken)
+    )
 
-    #if secret_key == key:  # on production key should be defined in environment
-    #    return jsonify(
-    #        first_name=first_name_response,
-    #        last_name=last_name_response,
-    #        email=email_response,
-    #        phone=phone_response,
-    #    )
-    return "msg"
+
+@app.route('/sign_in_at', methods=['POST'])
+def sign_up_wallet_BH():
+    jwtToken = request.args.get('auth_key')
+
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+    return jsonify(
+        sign_in_wallet_send_data(jwtToken)
+    )
 
 @app.route('/top_up', methods=['GET'])
 def top_up():
