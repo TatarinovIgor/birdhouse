@@ -41,13 +41,13 @@ def create_wallet_request():
 @app.route('/create_wallet_at', methods=['GET'])
 def create_wallet_requestAT():
 
-    jwtToken = request.args.get('X-Auth-Token')
-    sessionID = request.args.get('X-Session-ID')
+    jwtToken = request.headers.get('X-Auth-Token', type=str)
+    sessionID = request.headers.get('X-Session-ID', type=str)
 
-    decoded = jwt.decode(str.encode(jwtToken), "secret", algorithms=["HS256"])
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
 
     return jsonify(
-        external_id=decoded["uid"],
+        external_id=decoded["external_id"],
         first_name=decoded["first_name"],
         last_name=decoded["last_name"],
         email=decoded["email"],
