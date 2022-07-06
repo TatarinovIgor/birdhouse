@@ -29,7 +29,9 @@ def create_wallet_request():
         return jsonify(
             message="success"
         )
-    return "<p>Key is invalid</p>"
+    return jsonify(
+        message="error"
+    )
 
 
 @app.route('/create_wallet_AT', methods=['GET'])
