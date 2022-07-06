@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 
-from app.modules.create_wallet import create_wallet
+from app.modules.create_wallet import create_wallet_send_data
 
 app = Flask(__name__)
 
@@ -12,9 +12,10 @@ def home():
     return "<h1>Distant Reading Archive</h1><p>This site is a prototype API for distant reading of science fiction novels.</p>"
 
 
-@app.route('/create_wallet', methods=['GET'])
+@app.route('/create_wallet_BH', methods=['GET'])
 def create_wallet_request():
     # request headers
+    # Should be JWT, with credentials and secret key
     secret_key = request.headers.get('auth_key')
 
     # request body
@@ -23,19 +24,41 @@ def create_wallet_request():
     last_name = request.args.get("last_name")
     email = request.args.get("email")
     phone = request.args.get("phone")
+    create_wallet_send_data(secret_key, uid, first_name, last_name, email, phone)
+    return jsonify(
+        message="success"
+    )
+
+
+@app.route('/create_wallet_AT', methods=['GET'])
+def create_wallet_requestAT():
+    # request headers
+    X_Auth_Token = request.headers.get('X-Auth-Token')
+    X_Session_ID = request.headers.get('X-Session-ID')
+    # request body
 
     # authentication (key validation)
-    first_name_response, last_name_response, email_response, phone_response = create_wallet(uid, first_name, last_name, email, phone)
+    #first_name_response, last_name_response, email_response, phone_response = create_wallet(secret_key, uid, first_name,
+    #                                                                                       last_name, email, phone)
 
-    if secret_key == key:  # on production key should be defined in environment
-        return jsonify(
-            first_name=first_name_response,
-            last_name=last_name_response,
-            email=email_response,
-            phone=phone_response,
-        )
+    #uid = request.args.get('uid')
+    #first_name = request.args.get("first_name")
+    #last_name = request.args.get("last_name")
+    #email = request.args.get("email")
+    #phone = request.args.get("phone")
+
+    # authentication (key validation)
+    #first_name_response, last_name_response, email_response, phone_response = create_wallet(secret_key, uid, first_name,
+    #                                                                                        last_name, email, phone)
+
+    #if secret_key == key:  # on production key should be defined in environment
+    #    return jsonify(
+    #        first_name=first_name_response,
+    #        last_name=last_name_response,
+    #        email=email_response,
+    #        phone=phone_response,
+    #    )
     return "<p>Key is invalid</p>"
-
 
 @app.route('/top_up', methods=['GET'])
 def top_up():
