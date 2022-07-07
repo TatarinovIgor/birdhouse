@@ -46,20 +46,20 @@ def create_wallet_requestAT():
 def sign_up_wallet_BH():
     jwtToken = request.args.get('auth_key')
 
-    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
     return jsonify(
         sign_in_wallet_send_data(jwtToken)
     )
 
 
 @app.route('/sign_in_at', methods=['POST'])
-def sign_up_wallet_BH():
+def sign_in_wallet_at():
     jwtToken = request.args.get('auth_key')
 
     decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
     return jsonify(
-        sign_in_wallet_send_data(jwtToken)
+        decoded["external_id"]
     )
+
 
 @app.route('/top_up', methods=['GET'])
 def top_up():

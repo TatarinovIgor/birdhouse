@@ -44,4 +44,4 @@ def sign_in_wallet_send_data(jwtToken):
                'X-Session-ID': session_id}
 
     request = requests.post(URL, headers=headers)
-    return request.json()
+    return request.json() #access, refresh, etc
