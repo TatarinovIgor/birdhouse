@@ -14,8 +14,7 @@ def create_wallet_send_data(jwtToken):
     # make a request
     request = requests.post(URL, headers=headers)
     resp = request.json()
-    #return activate_wallet(resp, encoded_jwt, session_id)
-    return resp
+    return activate_wallet(resp, encoded_jwt, session_id)
 
 
 def activate_wallet(resp, encoded_jwt, session_id):
