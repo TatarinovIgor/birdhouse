@@ -57,9 +57,9 @@ def sign_in_wallet_at():
     sessionId = request.headers.get('X-Session-ID', str)
 
     decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
-    return jsonify(
-        decoded["external_id"]
-    )
+    return {
+        "external_id": decoded["external_id"]
+    }
 
 
 @app.route('/top_up', methods=['GET'])
