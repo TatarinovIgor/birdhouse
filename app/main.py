@@ -1,7 +1,8 @@
 import jwt
 from flask import Flask, request, jsonify
 
-from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data, activate_wallet
+from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data, activate_wallet, \
+    get_wallet_balance
 
 app = Flask(__name__)
 key = "secret"
@@ -49,6 +50,7 @@ def sign_up_wallet_BH():
     return jsonify(
         sign_in_wallet_send_data(jwtToken)
     )
+# should save guid in bubble
 
 
 @app.route('/sign_in_at', methods=['GET'])
@@ -60,6 +62,14 @@ def sign_in_wallet_at():
     return {
         "external_id": decoded["external_id"]
     }
+
+
+@app.route('/get_balance', methods=['GET'])
+def get_balance():
+    jwtToken = request.args.get('auth_key', type=str)
+    guid = request.args.get('guid', type=str)
+    return get_wallet_balance(jwtToken, guid)
+
 
 
 #@app.route('/get_wallet', methods=[])
@@ -87,9 +97,10 @@ def transfer():
     return "<p>Key is invalid</p>"
 
 
-@app.route('/get_balance', methods=['GET'])
-def get_balance():
+@app.route('/list_of_transaction', methods=['GET'])
+def list_of_transactions():
     secret_key = request.headers.get('auth_key')
     if secret_key == key:
-        return "<p>Get Balance here</p>"
+        return "<p>Deposit here</p>"
     return "<p>Key is invalid</p>"
+
