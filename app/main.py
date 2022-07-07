@@ -71,10 +71,8 @@ def get_balance():
     return get_wallet_balance(jwtToken, guid)
 
 
-
-#@app.route('/get_wallet', methods=[])
-@app.route('/top_up', methods=['GET'])
-def top_up():
+@app.route('/deposit', methods=['GET'])
+def deposit():
     secret_key = request.headers.get('auth_key')
     if secret_key == key:
         return "<p>Top up account here</p>"

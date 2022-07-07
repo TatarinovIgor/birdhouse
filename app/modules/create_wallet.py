@@ -54,5 +54,5 @@ def get_wallet_balance(jwtToken, guid):
     sign_in_data = sign_in_wallet_send_data(jwtToken)
     header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
     URL = "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
-    request = requests.get(URL+guid, headers=header)
+    request = requests.get(URL+guid+"?include_assets=true", headers=header)
     return request.json()
