@@ -62,6 +62,7 @@ def sign_in_wallet_at():
     }
 
 
+#@app.route('/get_wallet', methods=[])
 @app.route('/top_up', methods=['GET'])
 def top_up():
     secret_key = request.headers.get('auth_key')
