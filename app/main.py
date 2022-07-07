@@ -51,9 +51,10 @@ def sign_up_wallet_BH():
     )
 
 
-@app.route('/sign_in_at', methods=['POST'])
+@app.route('/sign_in_at', methods=['GET'])
 def sign_in_wallet_at():
-    jwtToken = request.args.get('auth_key')
+    jwtToken = request.headers.get('X-Auth-Token', str)
+    sessionId = request.headers.get('X-Session-ID', str)
 
     decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
     return jsonify(
