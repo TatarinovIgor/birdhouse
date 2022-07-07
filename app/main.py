@@ -1,7 +1,7 @@
 import jwt
 from flask import Flask, request, jsonify
 
-from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data
+from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data, activate_wallet
 
 app = Flask(__name__)
 key = "secret"
