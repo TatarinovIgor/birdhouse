@@ -14,14 +14,17 @@ def create_wallet_send_data(jwtToken):
     # make a request
     request = requests.post(URL, headers=headers)
     resp = request.json()
-    return activate_wallet(resp, encoded_jwt, session_id)
+    if request.status_code == 200:
+        return activate_wallet(resp, encoded_jwt, session_id)
+    return {"message": "error creating account"}
 
 
 def activate_wallet(resp, encoded_jwt, session_id):
     URL = 'https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account'
     authorisation_key = resp["access_token"]
+
     headers = {
-        'Authorization': authorisation_key,
+        'Authorization': "Bearer " + authorisation_key,
         'X-Auth-Token': encoded_jwt,
         'X-Session-ID': session_id,
     }
