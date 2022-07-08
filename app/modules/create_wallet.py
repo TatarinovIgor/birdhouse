@@ -58,19 +58,24 @@ def get_wallet_balance(jwtToken, guid):
     return request.json()
 
 
-def withdraw_from_wallet(jwtToken, guid, amount):
+def withdraw_from_wallet(jwtToken, amount, guid):
     sign_in_data = sign_in_wallet_send_data(jwtToken)
+    merchant_guid = "af74cf04-311f-435e-a530-0c85fbd6d154"
     header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
     URL = "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
     data = {
-        'amount': amount,
+        'amount': float(amount),
         'asset':'ATUSD:GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH',
-        'merchant_guid': guid,
+        'merchant_guid': merchant_guid,
     }
     request = requests.post(URL + guid + "/payout", headers=header, json=data)
-    resp_auth = authPayment(request.json()["transaction"], amount, guid)
-    if resp_auth == 200:
-        return request.json()
+    operandID = 'sep0031Payout:650bd907-baf9-11ec-9da4-5405dbf726e9'
+    SessionID = 123456789
+
+    if request.status_code == 200:
+        resp_auth = authPayment(request.json()["transaction"], guid, operandID, sign_in_data["access_token"], jwtToken, SessionID)
+        if resp_auth.status_code == 200:
+            return request.json()
 
     return {'message': 'error'}
 
@@ -80,7 +85,7 @@ def authPayment(transaction, guid, operandID, Authorization, AuthToken, SessionI
         'Authorization': 'Bearer ' + Authorization,
         'Session-ID': transaction,
         'X-Auth-Token': AuthToken,
-        'X-SessionID': SessionID
+        'X-SessionID': str(SessionID)
     }
     URL = "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
 
@@ -89,5 +94,5 @@ def authPayment(transaction, guid, operandID, Authorization, AuthToken, SessionI
         "operation_status": "pending"
     }
 
-    request = requests.patch(URL + guid + "/operation/" + operandID, headers=header, json=data)
-    return request.json()
+    req = requests.patch(URL + guid + "/operation/" + operandID, headers=header, json=data)
+    return req

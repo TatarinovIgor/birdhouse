@@ -84,7 +84,7 @@ def payout():
     jwtToken = request.args.get('auth_key', type=str)
     guid = request.args.get('guid', type=str)
     amount = request.args.get('amount', type=str)
-    return withdraw_from_wallet(jwtToken, guid, amount)
+    return withdraw_from_wallet(jwtToken, amount, guid)
 
 
 @app.route('/transfer', methods=['GET'])
