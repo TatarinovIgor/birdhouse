@@ -54,5 +54,40 @@ def get_wallet_balance(jwtToken, guid):
     sign_in_data = sign_in_wallet_send_data(jwtToken)
     header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
     URL = "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
-    request = requests.get(URL+guid+"?include_assets=true", headers=header)
+    request = requests.get(URL + guid + "?include_assets=true", headers=header)
+    return request.json()
+
+
+def withdraw_from_wallet(jwtToken, guid, amount):
+    sign_in_data = sign_in_wallet_send_data(jwtToken)
+    header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
+    URL = "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
+    data = {
+        'amount': amount,
+        'asset':'ATUSD:GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH',
+        'merchant_guid': guid,
+    }
+    request = requests.post(URL + guid + "/payout", headers=header, json=data)
+    resp_auth = authPayment(request.json()["transaction"], amount, guid)
+    if resp_auth == 200:
+        return request.json()
+
+    return {'message': 'error'}
+
+
+def authPayment(transaction, guid, operandID, Authorization, AuthToken, SessionID):
+    header = {
+        'Authorization': 'Bearer ' + Authorization,
+        'Session-ID': transaction,
+        'X-Auth-Token': AuthToken,
+        'X-SessionID': SessionID
+    }
+    URL = "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
+
+    data = {
+        "transaction_status": "pending",
+        "operation_status": "pending"
+    }
+
+    request = requests.patch(URL + guid + "/operation/" + operandID, headers=header, json=data)
     return request.json()

@@ -2,7 +2,7 @@ import jwt
 from flask import Flask, request, jsonify
 
 from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data, activate_wallet, \
-    get_wallet_balance
+    get_wallet_balance, withdraw_from_wallet
 
 app = Flask(__name__)
 key = "secret"
@@ -79,12 +79,12 @@ def deposit():
     return "<p>Key is invalid</p>"
 
 
-@app.route('/payout', methods=['GET'])
+@app.route('/withdraw', methods=['GET'])
 def payout():
-    secret_key = request.headers.get('auth_key')
-    if secret_key == key:
-        return "<p>Payout here</p>"
-    return "<p>Key is invalid</p>"
+    jwtToken = request.args.get('auth_key', type=str)
+    guid = request.args.get('guid', type=str)
+    amount = request.args.get('amount', type=str)
+    return withdraw_from_wallet(jwtToken, guid, amount)
 
 
 @app.route('/transfer', methods=['GET'])
