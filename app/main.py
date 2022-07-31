@@ -23,9 +23,8 @@ def create_wallet_request():
     # inside should be parameters entered during registration
     decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
 
-    return jsonify(
-        create_wallet_send_data(jwtToken)
-    )
+    return create_wallet_send_data(jwtToken)
+
 
 
 # ToDo - Test on the front
