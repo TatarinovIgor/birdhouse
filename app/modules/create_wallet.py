@@ -1,6 +1,9 @@
+import json
+
 import jwt
 import requests
 import uuid
+from flask import jsonify
 
 
 def create_wallet_send_data(jwtToken):
@@ -34,7 +37,7 @@ def activate_wallet(resp, encoded_jwt, session_id):
         'name': 'Private account'
     }
     request = requests.post(URL, headers=headers, json=body)
-    return request.json()
+    return request.json()["guid"]
 
 
 def sign_in_wallet_send_data(jwtToken):
@@ -57,7 +60,7 @@ def get_wallet_balance(jwtToken, guid):
     request = requests.get(URL + guid + "?include_assets=true", headers=header)
     return request.json()
 
-
+"""
 def withdraw_from_wallet(jwtToken, amount, guid):
     sign_in_data = sign_in_wallet_send_data(jwtToken)
     merchant_guid = "af74cf04-311f-435e-a530-0c85fbd6d154"
@@ -79,62 +82,23 @@ def withdraw_from_wallet(jwtToken, amount, guid):
             return request.json()
 
     return {'message': 'error'}
+"""
 
 
-def authPayment(transaction, guid, operandID, Authorization, AuthToken, SessionID):
-    header = {
-        'Authorization': 'Bearer ' + Authorization,
-        'Session-ID': transaction,
-        'X-Auth-Token': AuthToken,
-        'X-SessionID': str(SessionID)
-    }
+def make_deposit(jwtToken, amount, acc_guid):
     URL = "https://wallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
+    asset_code = "ATUSD"
+    asset_issuer = "GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH"
+
+    sign_in_data = sign_in_wallet_send_data(jwtToken)
+
+    header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
 
     data = {
-        "transaction_status": "pending",
-        "operation_status": "pending"
+        "ammount": amount,
+        "asset_code": asset_code,
+        "asset_issuer": asset_issuer
     }
 
-    req = requests.patch(URL + guid + "/operation/" + operandID, headers=header, json=data)
+    req = requests.patch(URL + acc_guid + "/payin/", headers=header, json=data)
     return req
-
-
-def make_deposit():
-    # step 1, 2
-    URL = "https://wallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
-    acc_guid = "af74cf04-311f-435e-a530-0c85fbd6d154"  # ToDo define what is acc_guid
-    account_id = ""  # ToDo define what is account_id
-    resp_step_2 = requests.get(URL + acc_guid + "/.well-know/stellar.tom")
-
-    # step 3, 4
-    resp_step_4 = requests.get(URL + acc_guid + "/deposit/info")
-
-    # step 5, 6
-    resp_step_6 = requests.get(URL + acc_guid + "/auth/?account=" + account_id)
-
-    # step 7, 8
-    singed_challenge = ""
-    payload_step_7 = {
-        'transaction': singed_challenge
-    }
-    resp_step_8 = requests.post(URL + acc_guid + "/auth", payload_step_7)
-
-    # step 9, 10
-    authorisation = ""
-    header = {
-        'authorisation': authorisation
-    }
-    payload_step_9 = {
-        'amount': "{amount}",
-        'asset_code': "ATUSD",
-        'asset_issuer': "G...XYZ",
-        'sender_id': "{merch_guid}",
-        'receiver_id': "{external_id}",
-        'fields': {
-            'transaction': {...}
-        }
-    }
-    resp_step_10 = requests.post(URL + acc_guid + "/deposit/transactions", payload_step_9)
-
-
-

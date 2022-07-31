@@ -1,8 +1,8 @@
 import jwt
 from flask import Flask, request, jsonify
 
-from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data, activate_wallet, \
-    get_wallet_balance, withdraw_from_wallet, make_deposit
+from app.modules.create_wallet import create_wallet_send_data, sign_in_wallet_send_data, \
+    get_wallet_balance, make_deposit
 
 app = Flask(__name__)
 key = "secret"
@@ -80,10 +80,16 @@ def get_balance():
 # ToDo - Test on the front, Test generally, Realise functional
 @app.route('/deposit', methods=['GET'])
 def deposit():
-    secret_key = request.headers.get('auth_key')
-    if secret_key == key:
-        return make_deposit()
-    return "<p>Key is invalid</p>"
+
+    # request headers
+    # Should be JWT, with credentials and secret key
+    jwtToken = request.args.get('auth_key')
+    amount = request.args.get('amount')
+    acc_guid = request.args.get('acc_guid')
+    # inside should be parameters entered during registration
+    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
+
+    return make_deposit(jwtToken)
 
 
 # ToDo  - Test on the front, Test generally
