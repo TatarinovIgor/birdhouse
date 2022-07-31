@@ -75,7 +75,6 @@ def get_balance():
     guid = request.args.get('guid', type=str)
     return get_wallet_balance(jwtToken, guid)
 
-
 # ToDo - Test on the front, Test generally, Realise functional
 @app.route('/deposit', methods=['GET'])
 def deposit():

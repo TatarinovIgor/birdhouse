@@ -58,7 +58,8 @@ def get_wallet_balance(jwtToken, guid):
     header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
     URL = "https://wallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
     request = requests.get(URL + guid + "?include_assets=true", headers=header)
-    return request.json()
+    listing = request.json()
+    return listing['assets'][0]['balance']
 
 """
 def withdraw_from_wallet(jwtToken, amount, guid):
