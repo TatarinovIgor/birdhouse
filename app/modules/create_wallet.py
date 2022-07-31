@@ -50,7 +50,7 @@ def sign_in_wallet_send_data(jwtToken):
                'X-Session-ID': session_id}
 
     request = requests.post(URL, headers=headers)
-    return request.json()  # access, refresh, etc
+    return request.json() # access, refresh, etc
 
 
 def get_wallet_balance(jwtToken, guid):
@@ -101,5 +101,5 @@ def make_deposit(jwtToken, amount, acc_guid):
         "asset_issuer": asset_issuer
     }
 
-    req = requests.patch(URL + acc_guid + "/payin/", headers=header, json=data)
-    return req
+    req = requests.post(URL + acc_guid + "/payin/", headers=header, json=data)
+    return req.json()["action"]["action"]
