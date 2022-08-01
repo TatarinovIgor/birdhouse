@@ -29,7 +29,7 @@ def activate_wallet(resp, encoded_jwt, session_id):
     headers = {'Content-Type': 'text/application/json; charset=utf-8',
                'Authorization': 'Bearer ' + authorisation_key,
                'X-Auth-Token': encoded_jwt,
-               'X-Session-ID': session_id
+                  'X-Session-ID': session_id
                }
     body = {
         'platform': 'stellar',
@@ -37,7 +37,7 @@ def activate_wallet(resp, encoded_jwt, session_id):
         'name': 'Private account'
     }
     request = requests.post(URL, headers=headers, json=body)
-    return request.json()["guid"]
+    return request.json()
 
 
 def sign_in_wallet_send_data(jwtToken):
@@ -96,7 +96,7 @@ def make_deposit(jwtToken, amount, acc_guid):
     header = {'Authorization': 'Bearer ' + sign_in_data["access_token"]}
 
     data = {
-        "ammount": amount,
+        "amount": float(amount),
         "asset_code": asset_code,
         "asset_issuer": asset_issuer
     }
