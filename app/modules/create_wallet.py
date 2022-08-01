@@ -37,7 +37,7 @@ def activate_wallet(resp, encoded_jwt, session_id):
         'name': 'Private account'
     }
     request = requests.post(URL, headers=headers, json=body)
-    return request.json()
+    return request.json()["guid"]
 
 
 def sign_in_wallet_send_data(jwtToken):
