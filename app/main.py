@@ -49,7 +49,7 @@ def create_wallet_requestAT():
 def sign_up_wallet_BH():
     jwtToken = request.args.get('auth_key')
 
-    return sign_in_wallet_send_data(jwtToken)["access_token"]
+    return sign_in_wallet_send_data(jwtToken)
 
 
 # should save guid in bubble
@@ -82,8 +82,6 @@ def deposit():
     jwtToken = request.args.get('auth_key')
     amount = request.args.get('amount')
     acc_guid = request.args.get('acc_guid')
-    # inside should be parameters entered during registration
-    decoded = jwt.decode(jwtToken, "secret", algorithms=["HS256"])
 
     return make_deposit(jwtToken, amount, acc_guid)
 
