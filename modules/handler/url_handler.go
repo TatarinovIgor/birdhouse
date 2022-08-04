@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	"github.com/tidwall/gjson"
@@ -40,16 +39,9 @@ func CreateWalletBH(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	}
 
 	if res.StatusCode == 200 {
-		_, err := json.Marshal(resBytes)
-
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`error formatting json response`))
-			return
-		}
+		accessToken := gjson.Get(string(resBytes), "access_token")
 
 		w.WriteHeader(res.StatusCode)
-		accessToken := gjson.Get(string(resBytes), "access_token")
 		w.Write([]byte(accessToken.Str))
 		return
 	}
