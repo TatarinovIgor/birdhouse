@@ -12,7 +12,7 @@ func InitRouter(router *httprouter.Router, pathName string, atWallet *service.AT
 
 	//GET routers
 	routerWrap.POST("/create_wallet_bh", handler.MakeCreateWalletBH(atWallet))
-	routerWrap.POST("/sign_in_wallet_bh'", handler.MakeSignInWalletBH(atWallet))
+	routerWrap.POST("/sign_in_wallet_bh", handler.MakeSignInWalletBH(atWallet))
 	routerWrap.GET("/get_balance", handler.GetBalance)
 	routerWrap.GET("/deposit", handler.Deposit)
 	routerWrap.GET("/withdraw", handler.Withdraw)
