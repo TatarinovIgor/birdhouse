@@ -36,7 +36,7 @@ func (service ATWalletService) TokenDecode(token string) (*TokenData, error) {
 	tokenData := TokenData{}
 	tok, err := jwt.Parse([]byte(token), jwt.WithVerify(false), jwt.WithValidate(false))
 	if err != nil {
-		return nil, fmt.Errorf("can't parse token, err: %v", err)
+		return nil, fmt.Errorf("can't parse token: %s, err: %v", token, err)
 	}
 	tokenString, err := json.Marshal(tok.PrivateClaims())
 	if err != nil {
