@@ -75,8 +75,8 @@ func (service ATWalletService) authATWallet(token, session, url string) (*AuthRe
 	if err != nil {
 		return nil, fmt.Errorf("can't request for signup, err %v", err)
 	}
-	if result.StatusCode != 200 {
-		return nil, err
+	if result.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("unexpected code from auth url: %s, code: %v", url, result.StatusCode)
 	}
 	err = json.NewDecoder(result.Body).Decode(&authResponse)
 	if err != nil {
