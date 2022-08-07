@@ -1,61 +1,49 @@
 package handler
 
 import (
+	"birdhouse/modules/service"
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
 
-type ATToken struct {
-	AccessToken string `json:"access_token"'`
+func MakeCreateWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		jwtToken := r.Header.Get("auth_key")
+		token, err := atWallet.SignUp(jwtToken)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusFailedDependency)
+			return
+		}
+		result, err := atWallet.Activate(token.AccessToken)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusFailedDependency)
+			return
+		}
+		err = json.NewEncoder(w).Encode(result)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusFailedDependency)
+			return
+		}
+	}
 }
 
-func CreateWalletBH(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	jwtToken := r.Header.Get("auth_key")
-
-	URL := "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/sign-up"
-	// generate session and jwt from uid
-	sessionID, _ := uuid.NewUUID()
-	// create headers
-	client := http.Client{}
-	request, err := http.NewRequest("POST", URL, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	request.Header.Set("X-Auth-Token", jwtToken)
-	request.Header.Set("X-Session-ID", sessionID.String())
-	// make a request
-	result, err := client.Do(request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusFailedDependency)
-		return
-	}
-	if result.StatusCode != 200 {
-		http.Error(w, fmt.Sprintf("can't sign-up at wallet"), result.StatusCode)
-		return
-	}
-	token := ATToken{}
-	err = json.NewDecoder(result.Body).Decode(&token)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("can't parse token from wallet"), result.StatusCode)
-		return
-	}
-	activateWallet(token.AccessToken, jwtToken, sessionID.String())
-}
-
-func CreateWalletAT(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
+func MakeCreateWalletAT(atWallet *service.ATWalletService) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		jwtToken := r.Header.Get("X-Auth-Token")
-		sessionID := r.Header.Get("X-Session-ID")
-
-		decoded, err := .(jwtToken, jws.General)
-		//return jsonify - ?
-
-
+		//sessionID := r.Header.Get("X-Session-ID")
+		result, err := atWallet.TokenDecode(jwtToken)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusFailedDependency)
+			return
+		}
+		err = json.NewEncoder(w).Encode(result)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusFailedDependency)
+			return
+		}
+	}
 }
 func activateWallet(accessToken, jwt, sessionID string) ([]byte, error) {
 	URL := "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/sign-in"
