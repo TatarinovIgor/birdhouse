@@ -23,10 +23,11 @@ func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
 	return service.authATWallet(token, sessionID.String(), URL)
 }
 
-func (service ATWalletService) CreateStellarWallet(token, accountType, name string) (*CreateWalletResponse, error) {
+func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType, name string) (*CreateWalletResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount
 	body := fmt.Sprintf("{\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"}", accountType, name)
-	wallet, err := service.requestToATWallet(URL, "POST", token, []byte(body))
+	session, _ := uuid.NewUUID()
+	wallet, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
 	if err != nil {
 		return nil, err
 	}
@@ -97,14 +98,18 @@ func (service ATWalletService) authATWallet(token, session, url string) (*AuthRe
 	}
 	return &authResponse, nil
 }
-func (service ATWalletService) requestToATWallet(url, requestType, token string, body []byte) (io.ReadCloser, error) {
+func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, token, session string,
+	body []byte) (io.ReadCloser, error) {
 	// create headers
 	client := http.Client{}
 	request, err := http.NewRequest(requestType, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, fmt.Errorf("can't make %s request for url: %s, err %v", requestType, url, err)
 	}
-	request.Header.Set("X-Auth-Token", token)
+	request.Header.Set("Authorization", token)
+	request.Header.Set("X-Auth-Token", jwtToken)
+	request.Header.Set("X-Session-ID", session)
+
 	// make a request
 	result, err := client.Do(request)
 	if err != nil {

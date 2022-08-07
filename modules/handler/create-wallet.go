@@ -18,7 +18,7 @@ func MakeCreateSignUPWithWallet(atWallet *service.ATWalletService) httprouter.Ha
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
-		result, err := atWallet.CreateStellarWallet(token.AccessToken,
+		result, err := atWallet.CreateStellarWallet(jwtToken, token.AccessToken,
 			"ccba7c71-27aa-40c3-9fe8-03db6934bc20", "BirdHouseClientAccount")
 		if err != nil {
 			log.Println(err)
