@@ -44,3 +44,10 @@ type CreateWalletResponse struct {
 	Registered  bool      `json:"registered"`
 	Blocked     bool      `json:"blocked"`
 }
+type FPFPaymentResponse struct {
+	Transaction string `json:"transaction"`
+	Action      struct {
+		IsRedirect bool   `json:"is_redirect"`
+		Action     string `json:"action"`
+	} `json:"action"`
+}

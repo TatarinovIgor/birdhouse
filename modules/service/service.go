@@ -27,12 +27,12 @@ func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType,
 	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount
 	body := fmt.Sprintf("{\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"}", accountType, name)
 	session, _ := uuid.NewUUID()
-	wallet, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
+	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
 	if err != nil {
 		return nil, err
 	}
 	createdWallet := CreateWalletResponse{}
-	err = json.NewDecoder(wallet).Decode(&createdWallet)
+	err = json.NewDecoder(result).Decode(&createdWallet)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +58,27 @@ func (service ATWalletService) TokenDecode(token string) (*TokenData, error) {
 	}
 	err = json.Unmarshal(tokenString, &tokenData)
 	if err != nil {
-		return nil, fmt.Errorf("can't unmarshak token data, err: %v", err)
+		return nil, fmt.Errorf("can't unmarshal token data, err: %v", err)
 	}
 	return &tokenData, nil
 }
-
+func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
+	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
+	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount
+	body := fmt.Sprintf("{\"amount\": %v, \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"is_depoist\": %v}",
+		amount, assetCode, asseIssuer, isDeposit)
+	session, _ := uuid.NewUUID()
+	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
+	if err != nil {
+		return nil, err
+	}
+	paymentResponse := FPFPaymentResponse{}
+	err = json.NewDecoder(result).Decode(&paymentResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &paymentResponse, nil
+}
 func NewATWalletService(baseWalletURL, requestPublicKey string, appGUID uuid.UUID) *ATWalletService {
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
@@ -116,7 +132,7 @@ func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, tok
 		return nil, fmt.Errorf("can't request %s for url: %s, err %v", requestType, url, err)
 	}
 	if result.StatusCode/100 != 2 {
-		defer result.Body.Close()
+		defer func() { _ = result.Body.Close() }()
 		bodyBytes, _ := io.ReadAll(result.Body)
 		return nil, fmt.Errorf("unexpected code from %s request for url: %s, code %v, message: %s",
 			requestType, url, result.StatusCode, string(bodyBytes))
