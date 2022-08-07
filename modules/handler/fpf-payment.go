@@ -17,22 +17,27 @@ func MakeFPFLinkForWallet(atWallet *service.ATWalletService, isDeposit bool) htt
 		account := r.URL.Query().Get("acc_guid")
 		accountGUID, err := uuid.Parse(account)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 		payment, err := atWallet.FPFPayment(jwtToken, token.AccessToken,
 			"ATUSD", "GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH",
 			accountGUID, amount, isDeposit)
 		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
 		err = json.NewEncoder(w).Encode(payment.Action.Action)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
