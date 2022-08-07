@@ -25,7 +25,7 @@ func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
 
 func (service ATWalletService) CreateStellarWallet(token, accountType, name string) (*CreateWalletResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount
-	body := fmt.Sprintf("\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"", accountType, name)
+	body := fmt.Sprintf("{\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"}", accountType, name)
 	wallet, err := service.requestToATWallet(URL, "POST", token, []byte(body))
 	if err != nil {
 		return nil, err
