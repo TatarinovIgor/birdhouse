@@ -111,8 +111,10 @@ func (service ATWalletService) requestToATWallet(url, requestType, token string,
 		return nil, fmt.Errorf("can't request %s for url: %s, err %v", requestType, url, err)
 	}
 	if result.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("unexpected code from %s request for url: %s, code %v",
-			requestType, url, result.StatusCode)
+		defer result.Body.Close()
+		bodyBytes, _ := io.ReadAll(result.Body)
+		return nil, fmt.Errorf("unexpected code from %s request for url: %s, code %v, message: %s",
+			requestType, url, result.StatusCode, string(bodyBytes))
 	}
 	return result.Body, nil
 }

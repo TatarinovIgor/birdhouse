@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func MakeCreateWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
+func MakeCreateSignUPWithWallet(atWallet *service.ATWalletService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		jwtToken := r.URL.Query().Get("auth_key")
 		token, err := atWallet.SignUp(jwtToken)
