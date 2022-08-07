@@ -19,7 +19,7 @@ type AuthResponse struct {
 
 type TokenData struct {
 	ExternalID string `json:"external_id"`
-	FirsName   string `json:"firs_name"`
+	FirsName   string `json:"first_name"`
 	LastName   string `json:"last_name"`
 	Email      string `json:"email"`
 	Phone      string `json:"phone"`
