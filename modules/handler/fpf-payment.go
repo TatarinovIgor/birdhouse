@@ -2,7 +2,7 @@ package handler
 
 import (
 	"birdhouse/modules/service"
-	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	"log"
@@ -34,7 +34,7 @@ func MakeFPFLinkForWallet(atWallet *service.ATWalletService, isDeposit bool) htt
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
-		err = json.NewEncoder(w).Encode(payment.Action.Action)
+		_, err = fmt.Fprintf(w, "%s", payment.Action.Action)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

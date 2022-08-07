@@ -2,7 +2,7 @@ package handler
 
 import (
 	"birdhouse/modules/service"
-	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -24,7 +24,7 @@ func MakeCreateSignUPWithWalletBH(atWallet *service.ATWalletService) httprouter.
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
-		err = json.NewEncoder(w).Encode(result.GUID)
+		_, err = fmt.Fprintf(w, "%s", result.GUID)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
