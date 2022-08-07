@@ -15,7 +15,7 @@ func InitRouter(router *httprouter.Router, pathName string, atWallet *service.AT
 	routerWrap.POST("/sign_in_wallet_bh", handler.MakeSignInWalletBH(atWallet))
 	routerWrap.GET("/deposit_wallet_link", handler.MakeFPFLinkForWallet(atWallet, true))
 	routerWrap.GET("/withdraw_wallet_link", handler.MakeFPFLinkForWallet(atWallet, false))
-	routerWrap.GET("/get_balance", handler.GetBalance)
+	routerWrap.GET("/get_balance", handler.MakeGetBalance(atWallet))
 	routerWrap.GET("/deposit", handler.MakeFPFLinkForWallet(atWallet, true))
 	routerWrap.GET("/withdraw", handler.MakeFPFLinkForWallet(atWallet, false))
 	routerWrap.GET("/transfer", handler.Transfer)

@@ -23,15 +23,15 @@ func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
 	return service.authATWallet(token, sessionID.String(), URL)
 }
 
-func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType, name string) (*CreateWalletResponse, error) {
-	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount
+func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType, name string) (*UserAccount, error) {
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount
 	body := fmt.Sprintf("{\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"}", accountType, name)
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
 	if err != nil {
 		return nil, err
 	}
-	createdWallet := CreateWalletResponse{}
+	createdWallet := UserAccount{}
 	err = json.NewDecoder(result).Decode(&createdWallet)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (service ATWalletService) TokenDecode(token string) (*TokenData, error) {
 }
 func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
 	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
-	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount + "/" +
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
 		account.String() + ATWalletFPF
 	body := fmt.Sprintf("{\"amount\": %v, \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"is_depoist\": %v}",
 		amount, assetCode, asseIssuer, isDeposit)
@@ -79,6 +79,22 @@ func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer
 		return nil, err
 	}
 	return &paymentResponse, nil
+}
+func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatformResponse, error) {
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + ATWalletFPF
+	queryParam := "?include_accounts=true&include_assets=true"
+	session, _ := uuid.NewUUID()
+	result, err := service.requestToATWallet(URL+queryParam, "POST", jwtToken, token,
+		session.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	userPlatformResponse := UserPlatformResponse{}
+	err = json.NewDecoder(result).Decode(&userPlatformResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &userPlatformResponse, nil
 }
 func NewATWalletService(baseWalletURL, requestPublicKey string, appGUID uuid.UUID) *ATWalletService {
 	return &ATWalletService{

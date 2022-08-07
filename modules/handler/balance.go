@@ -1,23 +1,33 @@
 package handler
 
 import (
+	"birdhouse/modules/service"
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
+	"log"
 	"net/http"
 )
 
-func GetBalance(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	/*
-		jwtToken := r.Header.Get("auth_key")
-		guid := r.Header.Get("guid")
-
-		//sign_in_data := sign_in_wallet_send_data(jwtToken)
-
-		//header := {"Authorization": "Bearer " + sign_in_data["access_token"]}
-		URL := "https://atwallet.rock-west.net/api/v1/wallet/application/ab54ee14-15f1-4ce5-bcc3-6559451354da/user/platform/stellar/account/"
-
-		request, _ := http.NewRequest("POST", URL, nil)
-		request.Header.Get(URL + guid + "?include_assets=true" + header)
-		//return json.Unmarshal(request)
-
-	*/
+func MakeGetBalance(atWallet *service.ATWalletService) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		jwtToken := r.URL.Query().Get("auth_key")
+		token, err := atWallet.SignIn(jwtToken)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		res, err := atWallet.GetBalance(jwtToken, token.AccessToken)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusFailedDependency)
+			return
+		}
+		err = json.NewEncoder(w).Encode(res)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 }
