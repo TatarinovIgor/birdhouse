@@ -8,6 +8,7 @@ const (
 	ATWalletPlatform = "/user/platform"
 	ATWalletStellar  = "/stellar"
 	ATWalletAccount  = "/account"
+	ATWalletFPF      = "/fpf"
 )
 
 type AuthResponse struct {
