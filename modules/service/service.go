@@ -106,7 +106,7 @@ func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, tok
 	if err != nil {
 		return nil, fmt.Errorf("can't make %s request for url: %s, err %v", requestType, url, err)
 	}
-	request.Header.Set("Authorization", token)
+	request.Header.Set("Authorization", "Bearer "+token)
 	request.Header.Set("X-Auth-Token", jwtToken)
 	request.Header.Set("X-Session-ID", session)
 
