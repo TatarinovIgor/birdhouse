@@ -1,10 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwt"
+	"io"
 	"net/http"
 )
 
@@ -15,18 +17,29 @@ type ATWalletService struct {
 }
 
 func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
-	URL := service.getATWalletUrl() + "/sign-up"
+	URL := service.getATWalletUrl() + ATWalletSignUp
 	// generate session and jwt from uid
 	sessionID, _ := uuid.NewUUID()
 	return service.authATWallet(token, sessionID.String(), URL)
 }
 
-func (service ATWalletService) Activate(token string) (*AuthResponse, error) {
-	return nil, nil
+func (service ATWalletService) CreateStellarWallet(token, accountType, name string) (*CreateWalletResponse, error) {
+	URL := service.getATWalletUrl() + ATWalletPlatform + ATWalletStellar + ATWalletAccount
+	body := fmt.Sprintf("\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"", accountType, name)
+	wallet, err := service.requestToATWallet(URL, "POST", token, []byte(body))
+	if err != nil {
+		return nil, err
+	}
+	createdWallet := CreateWalletResponse{}
+	err = json.NewDecoder(wallet).Decode(&createdWallet)
+	if err != nil {
+		return nil, err
+	}
+	return &createdWallet, nil
 }
 
 func (service ATWalletService) SignIn(token string) (*AuthResponse, error) {
-	URL := service.getATWalletUrl() + "/sign-in"
+	URL := service.getATWalletUrl() + ATWalletSignIn
 	// generate session and jwt from uid
 	sessionID, _ := uuid.NewUUID()
 	return service.authATWallet(token, sessionID.String(), URL)
@@ -66,14 +79,14 @@ func (service ATWalletService) authATWallet(token, session, url string) (*AuthRe
 	client := http.Client{}
 	request, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("can't make request for signup, err %v", err)
+		return nil, fmt.Errorf("can't make request for auth url: %s, err %v", url, err)
 	}
 	request.Header.Set("X-Auth-Token", token)
 	request.Header.Set("X-Session-ID", session)
 	// make a request
 	result, err := client.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("can't request for signup, err %v", err)
+		return nil, fmt.Errorf("can't request for auth url: %s, err %v", url, err)
 	}
 	if result.StatusCode/100 != 2 {
 		return nil, fmt.Errorf("unexpected code from auth url: %s, code: %v", url, result.StatusCode)
@@ -83,4 +96,23 @@ func (service ATWalletService) authATWallet(token, session, url string) (*AuthRe
 		return nil, fmt.Errorf("can't parse token from wallet %v", err)
 	}
 	return &authResponse, nil
+}
+func (service ATWalletService) requestToATWallet(url, requestType, token string, body []byte) (io.ReadCloser, error) {
+	// create headers
+	client := http.Client{}
+	request, err := http.NewRequest(requestType, url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("can't make %s request for url: %s, err %v", requestType, url, err)
+	}
+	request.Header.Set("X-Auth-Token", token)
+	// make a request
+	result, err := client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("can't request %s for url: %s, err %v", requestType, url, err)
+	}
+	if result.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("unexpected code from %s request for url: %s, code %v",
+			requestType, url, result.StatusCode)
+	}
+	return result.Body, nil
 }
