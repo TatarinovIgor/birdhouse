@@ -20,7 +20,7 @@ func MakeSignInWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 		err = json.NewEncoder(w).Encode(token)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -39,7 +39,7 @@ func MakeSignInAT(atWallet *service.ATWalletService) httprouter.Handle {
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
