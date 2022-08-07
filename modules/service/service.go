@@ -84,7 +84,7 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + ATWalletFPF
 	queryParam := "?include_accounts=true&include_assets=true"
 	session, _ := uuid.NewUUID()
-	result, err := service.requestToATWallet(URL+queryParam, "POST", jwtToken, token,
+	result, err := service.requestToATWallet(URL+queryParam, "GET", jwtToken, token,
 		session.String(), nil)
 	if err != nil {
 		return nil, err
