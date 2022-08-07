@@ -10,7 +10,7 @@ import (
 func MakeSignInWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		jwtToken := r.Header.Get("auth_key")
-		token, err := atWallet.SignUp(jwtToken)
+		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
