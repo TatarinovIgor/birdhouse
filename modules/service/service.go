@@ -81,7 +81,7 @@ func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer
 	return &paymentResponse, nil
 }
 func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatformResponse, error) {
-	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar
 	queryParam := "?include_accounts=true&include_assets=true"
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL+queryParam, "GET", jwtToken, token,
