@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
+	"log"
 	"net/http"
 )
 
@@ -13,16 +14,19 @@ func MakeCreateWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 		jwtToken := r.Header.Get("auth_key")
 		token, err := atWallet.SignUp(jwtToken)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
 		result, err := atWallet.Activate(token.AccessToken)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
@@ -35,11 +39,13 @@ func MakeCreateWalletAT(atWallet *service.ATWalletService) httprouter.Handle {
 		//sessionID := r.Header.Get("X-Session-ID")
 		result, err := atWallet.TokenDecode(jwtToken)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
