@@ -66,7 +66,7 @@ func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer
 	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
 		account.String() + ATWalletFPF
-	body := fmt.Sprintf("{\"amount\": %v, \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"is_depoist\": %v}",
+	body := fmt.Sprintf("{\"amount\": %v, \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"is_deposit\": %v}",
 		amount, assetCode, asseIssuer, isDeposit)
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
