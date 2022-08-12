@@ -1,6 +1,8 @@
 package service
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 const (
 	ATWalletSignUp       = "/sign-up"

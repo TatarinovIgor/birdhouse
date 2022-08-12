@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/lestrrat-go/jwx/v2 v2.0.4
+	github.com/lestrrat-go/jwx/v2 v2.0.5
 	github.com/stellar/go v0.0.0-20220729224424-bd25a437b9b0
 )
 
