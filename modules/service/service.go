@@ -2,10 +2,12 @@ package service
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwt"
 	"io"
 	"net/http"
 	"time"
@@ -13,7 +15,7 @@ import (
 
 type ATWalletService struct {
 	baseWalletURL    string
-	requestPublicKey string
+	requestPublicKey interface{}
 	appGUID          uuid.UUID
 }
 
@@ -49,7 +51,8 @@ func (service ATWalletService) SignIn(token string) (*AuthResponse, error) {
 
 func (service ATWalletService) TokenDecode(token string) (*TokenData, time.Time, time.Time, error) {
 	tokenData := TokenData{}
-	tok, err := jwt.Parse([]byte(token), jwt.WithVerify(false), jwt.WithValidate(false))
+
+	tok, err := jwt.Parse([]byte(token), jwt.WithVerify(jwa.RS256, service.requestPublicKey.(*rsa.PublicKey)), jwt.WithValidate(false))
 	if err != nil {
 		return nil, time.Now(), time.Now(), fmt.Errorf("can't parse token: %s, err: %v", token, err)
 	}
@@ -97,7 +100,7 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	}
 	return &userPlatformResponse, nil
 }
-func NewATWalletService(baseWalletURL, requestPublicKey string, appGUID uuid.UUID) *ATWalletService {
+func NewATWalletService(baseWalletURL string, requestPublicKey interface{}, appGUID uuid.UUID) *ATWalletService {
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
 		requestPublicKey: requestPublicKey,
