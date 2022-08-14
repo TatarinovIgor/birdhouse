@@ -26,19 +26,15 @@ func main() {
 	if appGUIDStr == "" {
 		log.Fatal("$APP_GUID env variable must be set")
 	}
-	publicKeyPath := os.Getenv("PUBLIC_KEY_PATH")
+	publicKey := os.Getenv("PUBLIC_KEY")
 	if appGUIDStr == "" {
 		log.Fatal("$PUBLIC_KEY env variable must be set")
 	}
-	publicKey, err := os.ReadFile(publicKeyPath)
-	if err != nil {
-		log.Fatalf("could not read public key env variable: %s, error: %v", publicKeyPath, err)
-	}
 
-	block, _ := pem.Decode(publicKey)
+	block, _ := pem.Decode([]byte(publicKey))
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		log.Fatalf("could not parse public key env variable: %s, error: %v", publicKeyPath, err)
+		log.Fatalf("could not parse public key env variable: %s, error: %v", publicKey, err)
 	}
 
 	appGUID, err := uuid.Parse(appGUIDStr)
