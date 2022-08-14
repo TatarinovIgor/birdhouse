@@ -21,6 +21,13 @@ type AuthResponse struct {
 }
 
 type TokenData struct {
+	Payload   UserData `json:"payload"`
+	Subject   string   `json:"sub"`
+	IssuedAt  uint     `json:"iat"`
+	ExpiresIn uint     `json:"exp"`
+}
+
+type UserData struct {
 	ExternalID string `json:"external_id"`
 	FirsName   string `json:"first_name"`
 	LastName   string `json:"last_name"`

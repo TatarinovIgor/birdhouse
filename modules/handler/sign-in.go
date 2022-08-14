@@ -30,7 +30,7 @@ func MakeSignInAT(atWallet *service.ATWalletService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		jwtToken := r.Header.Get("X-Auth-Token")
 		//sessionID := r.Header.Get("X-Session-ID")
-		result, _, _, err := atWallet.TokenDecode(jwtToken)
+		result, err := atWallet.TokenDecode(jwtToken)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)

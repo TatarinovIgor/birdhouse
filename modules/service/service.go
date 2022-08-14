@@ -10,7 +10,6 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"io"
 	"net/http"
-	"time"
 )
 
 type ATWalletService struct {
@@ -49,22 +48,22 @@ func (service ATWalletService) SignIn(token string) (*AuthResponse, error) {
 	return service.authATWallet(token, sessionID.String(), URL)
 }
 
-func (service ATWalletService) TokenDecode(token string) (*TokenData, time.Time, time.Time, error) {
+func (service ATWalletService) TokenDecode(token string) (*TokenData, error) {
 	tokenData := TokenData{}
 
-	tok, err := jwt.Parse([]byte(token), jwt.WithVerify(jwa.RS256, service.requestPublicKey.(*rsa.PublicKey)), jwt.WithValidate(false))
+	tok, err := jwt.Parse([]byte(token), jwt.WithVerify(jwa.RS256, service.requestPublicKey.(*rsa.PublicKey)), jwt.WithValidate(true))
 	if err != nil {
-		return nil, time.Now(), time.Now(), fmt.Errorf("can't parse token: %s, err: %v", token, err)
+		return nil, fmt.Errorf("can't parse token: %s, err: %v", token, err)
 	}
 	tokenString, err := json.Marshal(tok.PrivateClaims())
 	if err != nil {
-		return nil, time.Now(), time.Now(), fmt.Errorf("can't marshal token claim, err: %v", err)
+		return nil, fmt.Errorf("can't marshal token claim, err: %v", err)
 	}
 	err = json.Unmarshal(tokenString, &tokenData)
 	if err != nil {
-		return nil, time.Now(), time.Now(), fmt.Errorf("can't unmarshal token data, err: %v", err)
+		return nil, fmt.Errorf("can't unmarshal token data, err: %v", err)
 	}
-	return &tokenData, tok.IssuedAt(), tok.Expiration(), nil
+	return &tokenData, nil
 }
 func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
 	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
