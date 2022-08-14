@@ -48,7 +48,7 @@ func (service ATWalletService) SignIn(token string) (*AuthResponse, error) {
 	return service.authATWallet(token, sessionID.String(), URL)
 }
 
-func (service ATWalletService) TokenDecode(token string) (*TokenData, error) {
+func (service ATWalletService) TokenDecode(token string) (*UserData, error) {
 	tokenData := TokenData{}
 
 	tok, err := jwt.Parse([]byte(token), jwt.WithVerify(jwa.RS256, service.requestPublicKey.(*rsa.PublicKey)), jwt.WithValidate(true))
@@ -63,7 +63,7 @@ func (service ATWalletService) TokenDecode(token string) (*TokenData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal token data, err: %v", err)
 	}
-	return &tokenData, nil
+	return &tokenData.Payload, nil
 }
 func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
 	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
