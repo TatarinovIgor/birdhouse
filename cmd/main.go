@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -30,6 +31,14 @@ func main() {
 	if appGUIDStr == "" {
 		log.Fatal("$PUBLIC_KEY env variable must be set")
 	}
+	tokenTimeToLiveStr := os.Getenv("TOKEN_TIME_TO_LIVE")
+	if tokenTimeToLiveStr == "" {
+		log.Fatal("$TOKEN_TIME_TO_LIVE env variable must be set")
+	}
+	tokenTimeToLive, err := strconv.ParseInt(tokenTimeToLiveStr, 10, 64)
+	if err != nil {
+		log.Fatal("could not convert to int $TOKEN_TIME_TO_LIVE")
+	}
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		log.Fatalf("could not read public key: %s, error: %v", publicKey, err)
@@ -39,12 +48,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not parse public key env variable: %s, error: %v", publicKey, err)
 	}
-
 	appGUID, err := uuid.Parse(appGUIDStr)
 	if err != nil {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
-	atWalletService := service.NewATWalletService(basePath, pub, appGUID)
+	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
 	router := httprouter.New()
 	urlPath := ""
 	fmt.Println("hello i am started")

@@ -10,12 +10,14 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type ATWalletService struct {
 	baseWalletURL    string
 	requestPublicKey interface{}
 	appGUID          uuid.UUID
+	tokenTimeToLive  int64
 }
 
 func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
@@ -63,6 +65,10 @@ func (service ATWalletService) TokenDecode(token string) (*UserData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal token data, err: %v", err)
 	}
+	fmt.Println(time.Now().Unix(), tok.IssuedAt().Unix(), service.tokenTimeToLive, time.Now().Unix()-tok.IssuedAt().Unix())
+	if time.Now().Unix()-tok.IssuedAt().Unix() > service.tokenTimeToLive {
+		return nil, fmt.Errorf("token had expaired")
+	}
 	return &tokenData.Payload, nil
 }
 func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
@@ -99,11 +105,12 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	}
 	return &userPlatformResponse, nil
 }
-func NewATWalletService(baseWalletURL string, requestPublicKey interface{}, appGUID uuid.UUID) *ATWalletService {
+func NewATWalletService(baseWalletURL string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64) *ATWalletService {
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
 		requestPublicKey: requestPublicKey,
 		appGUID:          appGUID,
+		tokenTimeToLive:  tokenTimeToLive,
 	}
 }
 
