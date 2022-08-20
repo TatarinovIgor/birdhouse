@@ -31,7 +31,7 @@ func TransferDeposit(atWallet *service.ATWalletService) httprouter.Handle {
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
-		_, err = fmt.Fprintf(w, "%s", deposit.StellarMemo)
+		_, err = fmt.Fprintf(w, "%s", deposit)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

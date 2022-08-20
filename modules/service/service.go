@@ -93,9 +93,8 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 	amount float64) (*DepositResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
 		accGuid + ATWalletDepositTransaction
-	body := fmt.Sprintf("{\"amount\": %v, \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"sender_id\": %v, \"reciver_id\": %v}",
+	body := fmt.Sprintf("{\"amount\": \"%v\", \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"sender_id\": \"%s\", \"receiver_id\": \"%s\"}",
 		amount, assetCode, asseIssuer, senderInternalId, receiverExternalId)
-
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
 	if err != nil {
