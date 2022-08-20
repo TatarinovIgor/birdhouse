@@ -89,6 +89,25 @@ func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer
 	}
 	return &paymentResponse, nil
 }
+func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, accGuid, receiverExternalId, senderInternalId string,
+	amount float64) (*DepositResponse, error) {
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
+		accGuid + ATWalletDepositTransaction
+	body := fmt.Sprintf("{\"amount\": %v, \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"sender_id\": %v, \"reciver_id\": %v}",
+		amount, assetCode, asseIssuer, senderInternalId, receiverExternalId)
+
+	session, _ := uuid.NewUUID()
+	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
+	if err != nil {
+		return nil, err
+	}
+	depositResponse := DepositResponse{}
+	err = json.NewDecoder(result).Decode(&depositResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &depositResponse, nil
+}
 func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatformResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar
 	queryParam := "?include_accounts=true&include_assets=true"

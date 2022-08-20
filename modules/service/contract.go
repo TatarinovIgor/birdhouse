@@ -5,12 +5,13 @@ import (
 )
 
 const (
-	ATWalletSignUp       = "/sign-up"
-	ATWalletSignIn       = "/sign-in"
-	ATWalletUserPlatform = "/user/platform"
-	ATWalletStellar      = "/stellar"
-	ATWalletAccount      = "/account"
-	ATWalletFPF          = "/fpf"
+	ATWalletSignUp             = "/sign-up"
+	ATWalletSignIn             = "/sign-in"
+	ATWalletUserPlatform       = "/user/platform"
+	ATWalletStellar            = "/stellar"
+	ATWalletAccount            = "/account"
+	ATWalletFPF                = "/fpf"
+	ATWalletDepositTransaction = "/deposit/transactions"
 )
 
 type AuthResponse struct {
@@ -91,4 +92,11 @@ type FPFPaymentResponse struct {
 		IsRedirect bool   `json:"is_redirect"`
 		Action     string `json:"action"`
 	} `json:"action"`
+}
+
+type DepositResponse struct {
+	ID               string `json:"id"`
+	StellarAccountID string `json:"stellar_account_id"`
+	StellarMemoType  string `json:"stellar_memo_type"`
+	StellarMemo      string `json:"stellar_memo"`
 }

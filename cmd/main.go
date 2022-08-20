@@ -55,6 +55,7 @@ func main() {
 	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
 	router := httprouter.New()
 	urlPath := ""
+	fmt.Println(string(publicKey))
 	fmt.Println("hello i am started")
 	routing.InitRouter(router, urlPath, atWalletService)
 
