@@ -14,6 +14,11 @@ import (
 	"strconv"
 )
 
+// @title Example API
+// @version 1.0
+// @description Description of the example API
+// @securityDefinitions.basic BasicAut
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -57,6 +62,7 @@ func main() {
 	urlPath := ""
 	fmt.Println(string(publicKey))
 	fmt.Println("hello i am started")
+
 	routing.InitRouter(router, urlPath, atWalletService)
 
 	err = http.ListenAndServe(fmt.Sprintf(":%s", port), router)
@@ -65,4 +71,8 @@ func main() {
 		return
 	}
 
+	// documentation for share
+	// opts1 := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	// sh1 := middleware.Redoc(opts1, nil)
+	// r.Handle("/docs", sh1)
 }

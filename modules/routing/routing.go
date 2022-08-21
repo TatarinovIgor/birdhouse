@@ -4,6 +4,7 @@ import (
 	"birdhouse/modules/handler"
 	"birdhouse/modules/middleware"
 	"birdhouse/modules/service"
+	swagger "github.com/go-openapi/runtime/middleware"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -24,4 +25,14 @@ func InitRouter(router *httprouter.Router, pathName string, atWallet *service.AT
 	// call backs for AT-Wallet
 	routerWrap.GET("/create_wallet_at", handler.MakeSignInAT(atWallet))
 	routerWrap.GET("/sign_in_at", handler.MakeSignInAT(atWallet))
+
+	// documentation for developers
+	opts := swagger.SwaggerUIOpts{SpecURL: "swagger.yaml"}
+	sh := swagger.SwaggerUI(opts, nil)
+	routerWrap.GET("/docs", middleware.WrapHandler(sh))
+
+	// documentation for share
+	// opts1 := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	// sh1 := middleware.Redoc(opts1, nil)
+	// r.Handle("/docs", sh1)
 }
