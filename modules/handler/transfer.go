@@ -2,7 +2,7 @@ package handler
 
 import (
 	"birdhouse/modules/service"
-	"fmt"
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -31,7 +31,8 @@ func TransferDeposit(atWallet *service.ATWalletService) httprouter.Handle {
 			http.Error(w, err.Error(), http.StatusFailedDependency)
 			return
 		}
-		_, err = fmt.Fprintf(w, "%s", deposit)
+
+		err = json.NewEncoder(w).Encode(deposit)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

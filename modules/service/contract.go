@@ -100,3 +100,16 @@ type DepositResponse struct {
 	StellarMemoType  string `json:"stellar_memo_type"`
 	StellarMemo      string `json:"stellar_memo"`
 }
+
+type DepositData struct {
+	ID               string `json:"id"`
+	Status           string `json:"status"`
+	AmountIn         string `json:"amount_in"`
+	AmountOut        string `json:"amount_out"`
+	AmountFee        string `json:"amount_fee"`
+	StellarAccountID string `json:"stellar_account_id"`
+	StellarMemoType  string `json:"stellar_memo_type"`
+	StellarMemo      string `json:"stellar_memo"`
+	StartedAt        string `json:"started_at"`
+	CompletedAt      string `json:"completed_at"`
+}

@@ -8,6 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/stellar/go/clients/horizonclient"
+	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
+	stellar "github.com/stellar/go/txnbuild"
 	"io"
 	"net/http"
 	"time"
@@ -90,7 +94,7 @@ func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer
 	return &paymentResponse, nil
 }
 func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, accGuid, receiverExternalId, senderInternalId string,
-	amount float64) (*DepositResponse, error) {
+	amount float64) (*DepositData, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
 		accGuid + ATWalletDepositTransaction
 	body := fmt.Sprintf("{\"amount\": \"%v\", \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"sender_id\": \"%s\", \"receiver_id\": \"%s\"}",
@@ -101,11 +105,26 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 		return nil, err
 	}
 	depositResponse := DepositResponse{}
+
 	err = json.NewDecoder(result).Decode(&depositResponse)
 	if err != nil {
 		return nil, err
 	}
-	return &depositResponse, nil
+
+	_, err = service.BuildStellarTransaction("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	transactionData, err := service.requestToATWallet(URL+"/"+depositResponse.ID, "GET", jwtToken, token, session.String(), nil)
+
+	depositData := DepositData{}
+	err = json.NewDecoder(transactionData).Decode(&depositData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &depositData, nil
 }
 func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatformResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar
@@ -183,4 +202,45 @@ func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, tok
 			requestType, url, result.StatusCode, string(bodyBytes))
 	}
 	return result.Body, nil
+}
+
+func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssuer, destination string, amount float64) (io.ReadCloser, error) {
+	kp, err := keypair.Parse(addressOrSeed)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse sender key, error: %v", err)
+	}
+	client := horizonclient.DefaultTestNetClient
+	ar := horizonclient.AccountRequest{AccountID: kp.Address()}
+	sourceAccount, err := client.AccountDetail(ar)
+	if err != nil {
+		return nil, fmt.Errorf("can't source sender account, error: %v", err)
+	}
+	op := stellar.Payment{
+		Destination: destination,
+		Amount:      fmt.Sprintf("%f", amount),
+		Asset:       stellar.CreditAsset{Code: "ATUSD", Issuer: assetIssuer},
+	}
+	tx, err := stellar.NewTransaction(
+		stellar.TransactionParams{
+			SourceAccount:        &sourceAccount,
+			IncrementSequenceNum: true,
+			Operations:           []stellar.Operation{&op},
+			BaseFee:              stellar.MinBaseFee,
+			Preconditions:        stellar.Preconditions{TimeBounds: stellar.NewInfiniteTimeout()}, // Use a real timeout in production!
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't build transaction, error: %v", err)
+	}
+
+	tx, err = tx.Sign(network.TestNetworkPassphrase, kp.(*keypair.Full))
+	if err != nil {
+		return nil, fmt.Errorf("can't sign transaction, error: %v", err)
+	}
+	txe, err := tx.Base64()
+	if err != nil {
+		return nil, fmt.Errorf("can't convert to base 64, error: %v", err)
+	}
+	fmt.Println(txe)
+	return nil, nil
 }
