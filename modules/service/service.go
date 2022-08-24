@@ -3,6 +3,8 @@ package service
 import (
 	"bytes"
 	"crypto/rsa"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -110,8 +112,11 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 	if err != nil {
 		return nil, err
 	}
-
-	_, err = service.BuildStellarTransaction("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, amount)
+	memoString, err := service.convertMemo(depositResponse.StellarMemo)
+	if err != nil {
+		return nil, err
+	}
+	_, err = service.BuildStellarTransaction("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, memoString, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +209,7 @@ func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, tok
 	return result.Body, nil
 }
 
-func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssuer, destination string, amount float64) (io.ReadCloser, error) {
+func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssuer, destination, memo string, amount float64) (io.ReadCloser, error) {
 	kp, err := keypair.Parse(addressOrSeed)
 	if err != nil {
 		return nil, fmt.Errorf("can't parse sender key, error: %v", err)
@@ -216,9 +221,10 @@ func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssue
 		return nil, fmt.Errorf("can't source sender account, error: %v", err)
 	}
 	op := stellar.Payment{
-		Destination: destination,
-		Amount:      fmt.Sprintf("%f", amount),
-		Asset:       stellar.CreditAsset{Code: "ATUSD", Issuer: assetIssuer},
+		Destination:   destination,
+		Amount:        fmt.Sprintf("%f", amount),
+		Asset:         stellar.CreditAsset{Code: "ATUSD", Issuer: assetIssuer},
+		SourceAccount: sourceAccount.AccountID,
 	}
 	tx, err := stellar.NewTransaction(
 		stellar.TransactionParams{
@@ -242,5 +248,23 @@ func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssue
 		return nil, fmt.Errorf("can't convert to base 64, error: %v", err)
 	}
 	fmt.Println(txe)
+
+	resp, err := horizonclient.DefaultTestNetClient.SubmitTransaction(tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't submit transaction, error: %v", err)
+	}
+	fmt.Println("Successful Transaction:")
+	fmt.Println("Ledger:", resp.Ledger)
+	fmt.Println("Hash:", resp.Hash)
+
 	return nil, nil
+}
+
+func (service ATWalletService) convertMemo(memoString string) (string, error) {
+	txHashBytes, err := base64.StdEncoding.DecodeString(memoString)
+	if err != nil {
+		return "", fmt.Errorf("can't convert memo from base64, err: %s", err)
+	}
+	txHash := hex.EncodeToString(txHashBytes)
+	return txHash, nil
 }
