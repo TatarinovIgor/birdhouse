@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -15,6 +14,7 @@ import (
 	"github.com/stellar/go/network"
 	stellar "github.com/stellar/go/txnbuild"
 	"io"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -77,6 +77,7 @@ func (service ATWalletService) TokenDecode(token string) (*UserData, error) {
 	}
 	return &tokenData.Payload, nil
 }
+
 func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
 	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
@@ -95,6 +96,7 @@ func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer
 	}
 	return &paymentResponse, nil
 }
+
 func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, accGuid, receiverExternalId, senderInternalId string,
 	amount float64) (*DepositData, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
@@ -112,11 +114,19 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 	if err != nil {
 		return nil, err
 	}
-	memoString, err := service.convertMemo(depositResponse.StellarMemo)
 	if err != nil {
 		return nil, err
 	}
-	_, err = service.BuildStellarTransaction("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, memoString, amount)
+
+	var memoBytes []byte
+	if memoBytes, err = base64.StdEncoding.DecodeString(depositResponse.StellarMemo); err != nil || len(memoBytes) != 32 {
+		// error to log
+		return nil, err
+	}
+	var buf [32]byte
+	copy(buf[:], memoBytes)
+	memo := buf
+	_, err = service.BuildStellarTransactionHash("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, memo, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +141,42 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 
 	return &depositData, nil
 }
+
+func (service ATWalletService) Withdraw(jwtToken, token, assetCode, asseIssuer, accGuid, senderExternalId, receiverInternalId string,
+	amount float64) (*DepositData, error) {
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
+		accGuid + ATWalletWithdrawTransaction
+	session, _ := uuid.NewUUID()
+	memo := generateRandom(28)
+	body := fmt.Sprintf("{\"amount\": \"%v\", \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"sender_id\": \"%s\", \"receiver_id\": \"%s\", \"memo_type\": \"%s\", \"memo\": \"%s\"}",
+		amount, assetCode, asseIssuer, senderExternalId, receiverInternalId, "text", memo)
+	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
+	if err != nil {
+		return nil, err
+	}
+	depositResponse := DepositResponse{}
+
+	err = json.NewDecoder(result).Decode(&depositResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = service.BuildStellarTransactionText("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, memo, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	transactionData, err := service.requestToATWallet(URL+"/"+depositResponse.ID, "GET", jwtToken, token, session.String(), nil)
+
+	depositData := DepositData{}
+	err = json.NewDecoder(transactionData).Decode(&depositData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &depositData, nil
+}
+
 func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatformResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar
 	queryParam := "?include_accounts=true&include_assets=true"
@@ -147,6 +193,7 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	}
 	return &userPlatformResponse, nil
 }
+
 func NewATWalletService(baseWalletURL string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64) *ATWalletService {
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
@@ -159,6 +206,7 @@ func NewATWalletService(baseWalletURL string, requestPublicKey interface{}, appG
 func (service ATWalletService) getATWalletUrl() string {
 	return service.baseWalletURL + "/" + service.appGUID.String()
 }
+
 func (service ATWalletService) authATWallet(token, session, url string) (*AuthResponse, error) {
 	authResponse := AuthResponse{}
 	// create headers
@@ -183,6 +231,7 @@ func (service ATWalletService) authATWallet(token, session, url string) (*AuthRe
 	}
 	return &authResponse, nil
 }
+
 func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, token, session string,
 	body []byte) (io.ReadCloser, error) {
 	// create headers
@@ -209,7 +258,7 @@ func (service ATWalletService) requestToATWallet(url, requestType, jwtToken, tok
 	return result.Body, nil
 }
 
-func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssuer, destination, memo string, amount float64) (io.ReadCloser, error) {
+func (service ATWalletService) BuildStellarTransactionHash(addressOrSeed, assetIssuer, destination string, memo [32]byte, amount float64) (io.ReadCloser, error) {
 	kp, err := keypair.Parse(addressOrSeed)
 	if err != nil {
 		return nil, fmt.Errorf("can't parse sender key, error: %v", err)
@@ -233,6 +282,7 @@ func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssue
 			Operations:           []stellar.Operation{&op},
 			BaseFee:              stellar.MinBaseFee,
 			Preconditions:        stellar.Preconditions{TimeBounds: stellar.NewInfiniteTimeout()}, // Use a real timeout in production!
+			Memo:                 stellar.MemoHash(memo),
 		},
 	)
 	if err != nil {
@@ -260,11 +310,72 @@ func (service ATWalletService) BuildStellarTransaction(addressOrSeed, assetIssue
 	return nil, nil
 }
 
-func (service ATWalletService) convertMemo(memoString string) (string, error) {
+func (service ATWalletService) BuildStellarTransactionText(addressOrSeed, assetIssuer, destination, memo string, amount float64) (io.ReadCloser, error) {
+	kp, err := keypair.Parse(addressOrSeed)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse sender key, error: %v", err)
+	}
+	client := horizonclient.DefaultTestNetClient
+	ar := horizonclient.AccountRequest{AccountID: kp.Address()}
+	sourceAccount, err := client.AccountDetail(ar)
+	if err != nil {
+		return nil, fmt.Errorf("can't source sender account, error: %v", err)
+	}
+	op := stellar.Payment{
+		Destination:   destination,
+		Amount:        fmt.Sprintf("%f", amount),
+		Asset:         stellar.CreditAsset{Code: "ATUSD", Issuer: assetIssuer},
+		SourceAccount: sourceAccount.AccountID,
+	}
+	tx, err := stellar.NewTransaction(
+		stellar.TransactionParams{
+			SourceAccount:        &sourceAccount,
+			IncrementSequenceNum: true,
+			Operations:           []stellar.Operation{&op},
+			BaseFee:              stellar.MinBaseFee,
+			Preconditions:        stellar.Preconditions{TimeBounds: stellar.NewInfiniteTimeout()}, // Use a real timeout in production!
+			Memo:                 stellar.MemoText(memo),
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't build transaction, error: %v", err)
+	}
+
+	tx, err = tx.Sign(network.TestNetworkPassphrase, kp.(*keypair.Full))
+	if err != nil {
+		return nil, fmt.Errorf("can't sign transaction, error: %v", err)
+	}
+	txe, err := tx.Base64()
+	if err != nil {
+		return nil, fmt.Errorf("can't convert to base 64, error: %v", err)
+	}
+	fmt.Println(txe)
+
+	resp, err := horizonclient.DefaultTestNetClient.SubmitTransaction(tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't submit transaction, error: %v", err)
+	}
+	fmt.Println("Successful Transaction:")
+	fmt.Println("Ledger:", resp.Ledger)
+	fmt.Println("Hash:", resp.Hash)
+
+	return nil, nil
+}
+
+func (service ATWalletService) convertMemo(memoString string) ([]byte, error) {
 	txHashBytes, err := base64.StdEncoding.DecodeString(memoString)
 	if err != nil {
-		return "", fmt.Errorf("can't convert memo from base64, err: %s", err)
+		return nil, fmt.Errorf("can't convert memo from base64, err: %s", err)
 	}
-	txHash := hex.EncodeToString(txHashBytes)
-	return txHash, nil
+	return txHashBytes, nil
+}
+
+func generateRandom(n int) string {
+	rand.Seed(time.Now().UnixNano())
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

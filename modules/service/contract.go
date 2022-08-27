@@ -5,13 +5,14 @@ import (
 )
 
 const (
-	ATWalletSignUp             = "/sign-up"
-	ATWalletSignIn             = "/sign-in"
-	ATWalletUserPlatform       = "/user/platform"
-	ATWalletStellar            = "/stellar"
-	ATWalletAccount            = "/account"
-	ATWalletFPF                = "/fpf"
-	ATWalletDepositTransaction = "/deposit/transactions"
+	ATWalletSignUp              = "/sign-up"
+	ATWalletSignIn              = "/sign-in"
+	ATWalletUserPlatform        = "/user/platform"
+	ATWalletStellar             = "/stellar"
+	ATWalletAccount             = "/account"
+	ATWalletFPF                 = "/fpf"
+	ATWalletDepositTransaction  = "/deposit/transactions"
+	ATWalletWithdrawTransaction = "/withdraw/transactions"
 )
 
 type AuthResponse struct {
