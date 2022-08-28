@@ -147,7 +147,7 @@ func (service ATWalletService) Withdraw(jwtToken, token, assetCode, asseIssuer, 
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
 		accGuid + ATWalletWithdrawTransaction
 	session, _ := uuid.NewUUID()
-	memo := fmt.Sprintf("%v", time.Now().UTC())
+	memo := generateRandom(28)
 	fmt.Println(senderExternalId, receiverInternalId, jwtToken)
 	body := fmt.Sprintf("{\"amount\": \"%v\", \"asset_code\": \"%s\", \"asset_issuer\": \"%s\", \"sender_id\": \"%s\", \"receiver_id\": \"%s\", \"memo_type\": \"%s\", \"memo\": \"%s\"}",
 		amount, assetCode, asseIssuer, senderExternalId, receiverInternalId, "text", memo)
