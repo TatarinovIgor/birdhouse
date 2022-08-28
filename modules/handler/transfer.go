@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"birdhouse/modules/internal"
 	"birdhouse/modules/service"
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
@@ -14,7 +15,6 @@ func TransferDeposit(atWallet *service.ATWalletService) httprouter.Handle {
 		jwtToken := r.URL.Query().Get("auth_key")
 		amount, _ := strconv.ParseFloat(r.URL.Query().Get("amount"), 64)
 		accGuid := r.URL.Query().Get("acc_guid")
-		accountReceiverExternalId := r.URL.Query().Get("receiver_external_id")
 		accountSenderInternalId := r.URL.Query().Get("sender_internal_id")
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
@@ -22,10 +22,15 @@ func TransferDeposit(atWallet *service.ATWalletService) httprouter.Handle {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-
+		externalID, err := internal.GetExternalID(r.Context())
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		deposit, err := atWallet.Deposit(jwtToken, token.AccessToken,
 			"ATUSD", "GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH",
-			accGuid, accountReceiverExternalId, accountSenderInternalId, amount)
+			accGuid, externalID, accountSenderInternalId, amount)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
@@ -46,7 +51,6 @@ func TransferWithdraw(atWallet *service.ATWalletService) httprouter.Handle {
 		jwtToken := r.URL.Query().Get("auth_key")
 		amount, _ := strconv.ParseFloat(r.URL.Query().Get("amount"), 64)
 		accGuid := r.URL.Query().Get("acc_guid")
-		accountSenderExternalId := r.URL.Query().Get("sender_external_id")
 		accountReceiverInternalId := r.URL.Query().Get("receiver_internal_id")
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
@@ -54,10 +58,15 @@ func TransferWithdraw(atWallet *service.ATWalletService) httprouter.Handle {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-
+		externalID, err := internal.GetExternalID(r.Context())
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		deposit, err := atWallet.Withdraw(jwtToken, token.AccessToken,
 			"ATUSD", "GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH",
-			accGuid, accountSenderExternalId, accountReceiverInternalId, amount)
+			accGuid, externalID, accountReceiverInternalId, amount)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
