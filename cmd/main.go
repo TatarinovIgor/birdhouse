@@ -43,6 +43,10 @@ func main() {
 	if tokenTimeToLiveStr == "" {
 		log.Fatal("$TOKEN_TIME_TO_LIVE env variable must be set")
 	}
+	telegramBotToken := os.Getenv("TELEGRAM_BOT_TOKEN") // "5698836967:AAEO1kCse9XP5xDw67RYWOs9tSsZHpDlFDM"
+	if telegramBotToken == "" {
+		log.Fatal("$TELEGRAM_BOT_TOKEN env variable must be set")
+	}
 	tokenTimeToLive, err := strconv.ParseInt(tokenTimeToLiveStr, 10, 64)
 	if err != nil {
 		log.Fatal("could not convert to int $TOKEN_TIME_TO_LIVE")
@@ -60,7 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
-	bot, err := tgbotapi.NewBotAPI("5698836967:AAEO1kCse9XP5xDw67RYWOs9tSsZHpDlFDM")
+	bot, err := tgbotapi.NewBotAPI(telegramBotToken)
 	if err != nil {
 		log.Panic(err)
 	}
