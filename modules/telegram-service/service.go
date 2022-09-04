@@ -1,13 +1,15 @@
 package telegram_service
 
 import (
+	"birdhouse/modules/service"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
 type TelegramService struct {
-	update tgbotapi.UpdatesChannel
-	bot    *tgbotapi.BotAPI
+	update   tgbotapi.UpdatesChannel
+	bot      *tgbotapi.BotAPI
+	atWallet *service.ATWalletService
 }
 
 var menu = tgbotapi.NewReplyKeyboard(
@@ -83,10 +85,12 @@ func (receiver *TelegramService) ListenAndServe() {
 		}
 	}
 }
-func NewTelegramService(bot *tgbotapi.BotAPI, update tgbotapi.UpdatesChannel) *TelegramService {
+func NewTelegramService(bot *tgbotapi.BotAPI, update tgbotapi.UpdatesChannel,
+	atWallet *service.ATWalletService) *TelegramService {
 
 	return &TelegramService{
-		bot:    bot,
-		update: update,
+		bot:      bot,
+		update:   update,
+		atWallet: atWallet,
 	}
 }

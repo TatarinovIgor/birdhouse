@@ -10,6 +10,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
+	"github.com/oklog/run"
 	"log"
 	"net/http"
 	"os"
@@ -70,7 +71,7 @@ func main() {
 	updates := bot.GetUpdatesChan(u)
 
 	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
-	telegram_service.NewTelegramService(bot, updates)
+	telegramService := telegram_service.NewTelegramService(bot, updates, atWalletService)
 
 	router := httprouter.New()
 	urlPath := ""
@@ -78,11 +79,32 @@ func main() {
 
 	routing.InitRouter(router, urlPath, atWalletService)
 
-	err = http.ListenAndServe(fmt.Sprintf(":%s", port), router)
-	if err != nil {
-		fmt.Println("error", err)
-		return
+	g := run.Group{}
+	// stream manager
+	{
+		g.Add(func() error {
+			fmt.Println("telegram service starting")
+			telegramService.ListenAndServe()
+			return nil
+		}, func(err error) {
+			fmt.Println("telegram service stopping")
+		})
 	}
+	// REST API
+	{
+		g.Add(func() error {
+			fmt.Println("REST API starting")
+			err = http.ListenAndServe(fmt.Sprintf(":%s", port), router)
+			if err != nil {
+				fmt.Println("error", err)
+				return err
+			}
+			return nil
+		}, func(err error) {
+			fmt.Println("REST API stopping")
+		})
+	}
+	fmt.Println("app exiting")
 
 	// documentation for share
 	// opts1 := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
