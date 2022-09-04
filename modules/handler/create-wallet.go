@@ -8,13 +8,22 @@ import (
 	"net/http"
 )
 
+// swagger:route GET /create_wallet_bh create new wallet
+// Create new wallet
+//
+// security:
+// - apiKey: []
+// responses:
+//  403: Forbidden
+//  424: Failed Dependency
+//  200: Success
 func MakeCreateSignUPWithWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		jwtToken := r.URL.Query().Get("auth_key")
 		token, err := atWallet.SignUp(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 		result, err := atWallet.CreateStellarWallet(jwtToken, token.AccessToken,
