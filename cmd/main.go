@@ -3,7 +3,7 @@ package main
 import (
 	"birdhouse/modules/routing"
 	"birdhouse/modules/service"
-	telegram_service "birdhouse/modules/telegram-service"
+	telegramservice "birdhouse/modules/telegram-service"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
-	telegramService := telegram_service.NewTelegramService(bot, atWalletService)
+	telegramService := telegramservice.NewTelegramService(bot, atWalletService)
 
 	router := httprouter.New()
 	urlPath := ""
@@ -99,7 +99,8 @@ func main() {
 			fmt.Println("REST API stopping")
 		})
 	}
-	fmt.Println("app exiting")
+	err = g.Run()
+	fmt.Println("app exiting with error: ", err)
 
 	// documentation for share
 	// opts1 := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
