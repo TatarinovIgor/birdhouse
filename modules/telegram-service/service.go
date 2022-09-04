@@ -7,7 +7,6 @@ import (
 )
 
 type TelegramService struct {
-	update   tgbotapi.UpdatesChannel
 	bot      *tgbotapi.BotAPI
 	atWallet *service.ATWalletService
 }
@@ -46,7 +45,10 @@ var ButtonMenu = tgbotapi.NewInlineKeyboardMarkup(
 func (receiver *TelegramService) ListenAndServe() {
 	bot := receiver.bot
 	var err error
-	for update := range receiver.update {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+	updates := bot.GetUpdatesChan(u)
+	for update := range updates {
 		if update.Message != nil { // If we got a message
 			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
@@ -85,12 +87,10 @@ func (receiver *TelegramService) ListenAndServe() {
 		}
 	}
 }
-func NewTelegramService(bot *tgbotapi.BotAPI, update tgbotapi.UpdatesChannel,
-	atWallet *service.ATWalletService) *TelegramService {
+func NewTelegramService(bot *tgbotapi.BotAPI, atWallet *service.ATWalletService) *TelegramService {
 
 	return &TelegramService{
 		bot:      bot,
-		update:   update,
 		atWallet: atWallet,
 	}
 }

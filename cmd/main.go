@@ -65,13 +65,8 @@ func main() {
 		log.Panic(err)
 	}
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates := bot.GetUpdatesChan(u)
-
 	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
-	telegramService := telegram_service.NewTelegramService(bot, updates, atWalletService)
+	telegramService := telegram_service.NewTelegramService(bot, atWalletService)
 
 	router := httprouter.New()
 	urlPath := ""
