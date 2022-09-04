@@ -3,9 +3,11 @@ package main
 import (
 	"birdhouse/modules/routing"
 	"birdhouse/modules/service"
+	telegram_service "birdhouse/modules/telegram-service"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 	"log"
@@ -57,7 +59,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
+	bot, err := tgbotapi.NewBotAPI("5698836967:AAEO1kCse9XP5xDw67RYWOs9tSsZHpDlFDM")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := bot.GetUpdatesChan(u)
+
 	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
+	telegram_service.NewTelegramService(bot, updates)
+
 	router := httprouter.New()
 	urlPath := ""
 	fmt.Println("hello i am started")
