@@ -3,6 +3,7 @@ package handler
 import (
 	"birdhouse/modules/service"
 	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -31,6 +32,7 @@ func MakeSignInAT(atWallet *service.ATWalletService) httprouter.Handle {
 		jwtToken := r.Header.Get("X-Auth-Token")
 		//sessionID := r.Header.Get("X-Session-ID")
 		result, err := atWallet.TokenDecode(jwtToken)
+		fmt.Println(jwtToken)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusFailedDependency)
