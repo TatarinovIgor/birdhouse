@@ -38,6 +38,7 @@ func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType,
 	body := fmt.Sprintf("{\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"}", accountType, name)
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
+	fmt.Println(err)
 	if err != nil {
 		return nil, err
 	}
