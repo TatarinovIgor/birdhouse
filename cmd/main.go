@@ -44,6 +44,10 @@ func main() {
 	if err != nil {
 		log.Fatal("could not convert to int $TOKEN_TIME_TO_LIVE")
 	}
+	seed := os.Getenv("SEED")
+	if appGUIDStr == "" {
+		log.Fatal("$SEED env variable must be set")
+	}
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		log.Fatalf("could not read public key: %s, error: %v", publicKey, err)
@@ -57,7 +61,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
-	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
+	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive)
 	router := httprouter.New()
 	urlPath := ""
 	fmt.Println("hello i am started")
