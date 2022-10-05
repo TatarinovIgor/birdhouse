@@ -1,4 +1,5 @@
 cmd/birdhouse.exe
 cmd/go_build_main_go.exe
 cmd/jwtRS256.key
+cmd/env
 birdhouse.exe
