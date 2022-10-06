@@ -1,0 +1,178 @@
+consumes:
+- application/json
+info:
+  title: Birdhouse
+  version: 0.1.0
+produces:
+- application/json
+schemes:
+- http
+swagger: "2.0"
+
+paths:
+  /create_wallet_bh:
+    post:
+      tags:
+        - Requests
+      parameters:
+        - name: auth_key
+          in: query
+          type: string
+          format: jwt
+      responses:
+        200:
+          description: successful wallet creation
+          schema:
+            type: string
+            example: "ab54ee14-15f1-4ce5-bcc3-6559451354da"
+        400:
+          description: failed parsing token
+          schema:
+            type: string
+            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
+        424:
+          description: failed dependency
+          schema:
+            type: string
+        403:
+          description: forbidden
+          schema:
+            type: string
+  /sign_in_wallet_bh:
+    post:
+      tags:
+        - Requests
+      parameters:
+        - name: auth_key
+          in: query
+          type: string
+          format: jwt
+      responses:
+        200:
+          description: successful wallet sign in
+          schema:
+            type: object
+            description: json with tokens and their expiration
+        400:
+          description: failed parsing token
+          schema:
+            type: string
+            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
+        424:
+          description: failed dependency
+          schema:
+            type: string
+        500:
+          description: internal error, cant parse the response
+          schema:
+            type: string
+  /deposit_wallet_link:
+    get:
+      tags:
+        - Requests
+      parameters:
+        - name: auth_key
+          in: query
+          type: string
+          format: jwt
+        - name: amount
+          in: query
+          type: integer
+        - name: acc_guid
+          in: query
+          type: string
+          description: guid given by api of account, should be same account as encoded in jwt
+      responses:
+        200:
+          description: successful wallet creation
+          schema:
+            description: link to the iframe for deposit
+            type: string
+        400:
+          description: failed parsing guid or token
+          schema:
+            type: string
+            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
+        403:
+          description: failed to authenticate with given token
+          schema:
+            type: string
+        424:
+          description: failed to initiate deposit
+          schema:
+            type: string
+        500:
+          description: internal error, cant parse the response
+          schema:
+            type: string
+  /withdraw_wallet_link:
+    get:
+      tags:
+        - Requests
+      parameters:
+        - name: auth_key
+          in: query
+          type: string
+          format: jwt
+        - name: amount
+          in: query
+          type: integer
+        - name: acc_guid
+          in: query
+          type: string
+          description: guid given by api of account, should be same account as encoded in jwt
+      responses:
+        200:
+          description: link to the iframe for withdraw
+          schema:
+            type: string
+            example: "ab54ee14-15f1-4ce5-bcc3-6559451354da"
+        400:
+          description: failed parsing guid or token
+          schema:
+            type: string
+            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
+        403:
+          description: failed to authenticate with given token
+          schema:
+            type: string
+        424:
+          description: failed to initiate withdraw
+          schema:
+            type: string
+        500:
+          description: internal error, cant parse the response
+          schema:
+            type: string
+  /get_balance:
+    get:
+      tags:
+        - Requests
+      parameters:
+        - name: auth_key
+          in: query
+          type: string
+          format: jwt
+      responses:
+        200:
+          description: link to the iframe for withdraw
+          schema:
+            type: string
+            example: "ab54ee14-15f1-4ce5-bcc3-6559451354da"
+        400:
+          description: failed parsing guid or token
+          schema:
+            type: string
+            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
+        403:
+          description: failed to authenticate with given token
+          schema:
+            type: string
+        424:
+          description: failed to get balance
+          schema:
+            type: string
+        500:
+          description: internal error, cant parse the response
+          schema:
+            type: string
