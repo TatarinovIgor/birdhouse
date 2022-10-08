@@ -40,6 +40,8 @@ func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType,
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
 	fmt.Println(err)
+	fmt.Println("succes on first err")
+	fmt.Println(body)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +50,8 @@ func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType,
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("succes on second err")
+
 	return &createdWallet, nil
 }
 
