@@ -6,6 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math/rand"
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -13,10 +18,6 @@ import (
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
 	stellar "github.com/stellar/go/txnbuild"
-	"io"
-	"math/rand"
-	"net/http"
-	"time"
 )
 
 type ATWalletService struct {
@@ -24,7 +25,7 @@ type ATWalletService struct {
 	requestPublicKey interface{}
 	appGUID          uuid.UUID
 	tokenTimeToLive  int64
-	seed			 string
+	seed             string
 }
 
 func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
@@ -205,9 +206,9 @@ func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
 		requestPublicKey: requestPublicKey,
-		appGUID:          appGUID,	
+		appGUID:          appGUID,
 		tokenTimeToLive:  tokenTimeToLive,
-		seed:			  seed,	
+		seed:             seed,
 	}
 }
 

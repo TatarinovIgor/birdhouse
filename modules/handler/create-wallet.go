@@ -3,9 +3,10 @@ package handler
 import (
 	"birdhouse/modules/service"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // swagger:route GET /create_wallet_bh create new wallet
@@ -19,6 +20,7 @@ import (
 //  200: Success
 func MakeCreateSignUPWithWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		fmt.Println("new signup req")
 		jwtToken := r.URL.Query().Get("auth_key")
 		token, err := atWallet.SignUp(jwtToken)
 		if err != nil {
