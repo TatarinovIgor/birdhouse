@@ -51,6 +51,10 @@ func main() {
 	if err != nil {
 		log.Fatal("could not convert to int $TOKEN_TIME_TO_LIVE")
 	}
+	seed := os.Getenv("SEED")
+	if appGUIDStr == "" {
+		log.Fatal("$SEED env variable must be set")
+	}
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		log.Fatalf("could not read public key: %s, error: %v", publicKey, err)

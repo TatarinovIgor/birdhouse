@@ -24,6 +24,7 @@ type ATWalletService struct {
 	requestPublicKey interface{}
 	appGUID          uuid.UUID
 	tokenTimeToLive  int64
+	seed             string
 }
 
 func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
@@ -38,6 +39,9 @@ func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType,
 	body := fmt.Sprintf("{\"platfrom\": \"stellar\", \"type\": \"%s\", \"name\": \"%s\"}", accountType, name)
 	session, _ := uuid.NewUUID()
 	result, err := service.requestToATWallet(URL, "POST", jwtToken, token, session.String(), []byte(body))
+	fmt.Println(err)
+	fmt.Println("succes on first err")
+	fmt.Println(body)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +50,8 @@ func (service ATWalletService) CreateStellarWallet(jwtToken, token, accountType,
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("succes on second err")
+
 	return &createdWallet, nil
 }
 
@@ -126,7 +132,8 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 	var buf [32]byte
 	copy(buf[:], memoBytes)
 	memo := buf
-	_, err = service.BuildStellarTransactionHash("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, memo, amount)
+	_, err = service.BuildStellarTransactionHash(service.seed, asseIssuer, depositResponse.StellarAccountID, memo, amount)
+
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +169,7 @@ func (service ATWalletService) Withdraw(jwtToken, token, assetCode, asseIssuer, 
 		return nil, err
 	}
 
-	_, err = service.BuildStellarTransactionText("SBBYW2G6H26Y7JHUJUV2DTS7EZDE7DE5S5S4BAVH7UIST3JD26OQ4VQ6", asseIssuer, depositResponse.StellarAccountID, memo, amount)
+	_, err = service.BuildStellarTransactionText(service.seed, asseIssuer, depositResponse.StellarAccountID, memo, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -195,12 +202,14 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	return &userPlatformResponse, nil
 }
 
-func NewATWalletService(baseWalletURL string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64) *ATWalletService {
+func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64) *ATWalletService {
+
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
 		requestPublicKey: requestPublicKey,
 		appGUID:          appGUID,
 		tokenTimeToLive:  tokenTimeToLive,
+		seed:             seed,
 	}
 }
 

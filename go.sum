@@ -165,6 +165,8 @@ github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/spf13/cobra v0.0.3/go.mod h1:1l0Ry5zgKvJasoi3XT1TypsSe7PqH0Sj9dhYf7v3XqQ=
 github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=
+github.com/stellar/go v0.0.0-20220817094308-f4b20d89922e h1:0XKq3deV5eosPgn5N8oR9jjoMnaKxDGGActuvaWqwyQ=
+github.com/stellar/go v0.0.0-20220817094308-f4b20d89922e/go.mod h1:QXwuKmYVvqQZlByv0EeNb0Rgog9AP+eMmARcdt3h2rI=
 github.com/stellar/go v0.0.0-20220902181744-56a707d71997 h1:7w49Wl1uDkLfgIMVLjcJxnbTv3FAxO946oKVS74Vs4c=
 github.com/stellar/go v0.0.0-20220902181744-56a707d71997/go.mod h1:QXwuKmYVvqQZlByv0EeNb0Rgog9AP+eMmARcdt3h2rI=
 github.com/stellar/go-xdr v0.0.0-20211103144802-8017fc4bdfee h1:fbVs0xmXpBvVS4GBeiRmAE3Le70ofAqFMch1GTiq/e8=

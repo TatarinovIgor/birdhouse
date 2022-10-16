@@ -19,6 +19,7 @@ import (
 //  200: Success
 func MakeCreateSignUPWithWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		fmt.Println("new signup req")
 		jwtToken := r.URL.Query().Get("auth_key")
 		token, err := atWallet.SignUp(jwtToken)
 		if err != nil {
