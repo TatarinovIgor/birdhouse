@@ -2,6 +2,7 @@ package telegram_service
 
 import (
 	"birdhouse/modules/service"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
@@ -86,6 +87,7 @@ func (receiver *TelegramService) ListenAndServe() {
 			}
 		}
 	}
+	fmt.Println("exit")
 }
 func NewTelegramService(bot *tgbotapi.BotAPI, atWallet *service.ATWalletService) *TelegramService {
 
