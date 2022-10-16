@@ -55,13 +55,13 @@ type PlatformAccount struct {
 }
 
 type UserAsset struct {
-	Balance       string `json:"balance"`
-	Code          string `json:"code"`
-	Name          string `json:"name"`
-	MinorUnit     uint   `json:"minor_unit"`
-	Activated     bool   `json:"activated"`
-	StellarCode   string `json:"stellar_code"`
-	StellarIssuer string `json:"stellar_issuer"`
+	Balance       float64 `json:"balance"`
+	Code          string  `json:"code"`
+	Name          string  `json:"name"`
+	MinorUnit     uint    `json:"minor_unit"`
+	Activated     bool    `json:"activated"`
+	StellarCode   string  `json:"stellar_code"`
+	StellarIssuer string  `json:"stellar_issuer"`
 }
 type UserAccount struct {
 	Platform    string      `json:"platform"`

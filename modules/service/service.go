@@ -6,11 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
-	"math/rand"
-	"net/http"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -18,6 +13,10 @@ import (
 	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/network"
 	stellar "github.com/stellar/go/txnbuild"
+	"io"
+	"math/rand"
+	"net/http"
+	"time"
 )
 
 type ATWalletService struct {
@@ -134,6 +133,7 @@ func (service ATWalletService) Deposit(jwtToken, token, assetCode, asseIssuer, a
 	copy(buf[:], memoBytes)
 	memo := buf
 	_, err = service.BuildStellarTransactionHash(service.seed, asseIssuer, depositResponse.StellarAccountID, memo, amount)
+
 	if err != nil {
 		return nil, err
 	}
@@ -203,6 +203,7 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 }
 
 func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64) *ATWalletService {
+
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
 		requestPublicKey: requestPublicKey,

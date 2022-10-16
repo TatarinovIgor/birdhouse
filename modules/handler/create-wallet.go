@@ -3,10 +3,9 @@ package handler
 import (
 	"birdhouse/modules/service"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 // swagger:route GET /create_wallet_bh create new wallet
