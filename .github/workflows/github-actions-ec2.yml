@@ -1,6 +1,7 @@
 name: Push-to-EC2
 
 # Trigger deployment only on push to golang-deploy branch
+# Remote user fixed
 on:
   push:
     branches:
