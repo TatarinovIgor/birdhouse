@@ -1,7 +1,7 @@
 name: Push-to-EC2
 
 # Trigger deployment only on push to main branch
-# Remote user fixed
+# Remote user and env fixed
 on:
   push:
     branches:
