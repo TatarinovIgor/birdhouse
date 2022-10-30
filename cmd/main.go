@@ -73,7 +73,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	atWalletService := service.NewATWalletService(basePath, pub, appGUID, tokenTimeToLive)
+	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive)
 	telegramService := telegramservice.NewTelegramService(bot, atWalletService)
 
 	router := httprouter.New()
