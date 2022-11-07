@@ -10,7 +10,6 @@ type TelegramService struct {
 	privateKey *rsa.PrivateKey
 	bot        *tgbotapi.BotAPI
 	atWallet   *service.ATWalletService
-	update     tgbotapi.Update
 }
 
 var menu = tgbotapi.NewReplyKeyboard(
