@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 )
 
@@ -27,6 +28,15 @@ type TokenData struct {
 	Subject   string   `json:"sub"`
 	IssuedAt  uint     `json:"iat"`
 	ExpiresIn uint     `json:"exp"`
+}
+
+type TokenClaims struct {
+	Payload UserData `json:"payload"`
+	jwt.StandardClaims
+}
+
+func (token TokenData) Valid() error {
+	return nil
 }
 
 type UserData struct {

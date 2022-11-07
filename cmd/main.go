@@ -3,7 +3,7 @@ package main
 import (
 	"birdhouse/modules/routing"
 	"birdhouse/modules/service"
-	telegramservice "birdhouse/modules/telegram-service"
+	telegramservice "birdhouse/modules/telegram"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -39,6 +39,10 @@ func main() {
 	if appGUIDStr == "" {
 		log.Fatal("$PUBLIC_KEY env variable must be set")
 	}
+	privateKeyPath := os.Getenv("PRIVATE_KEY")
+	if appGUIDStr == "" {
+		log.Fatal("$PUBLIC_KEY env variable must be set")
+	}
 	tokenTimeToLiveStr := os.Getenv("TOKEN_TIME_TO_LIVE")
 	if tokenTimeToLiveStr == "" {
 		log.Fatal("$TOKEN_TIME_TO_LIVE env variable must be set")
@@ -59,7 +63,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not read public key: %s, error: %v", publicKey, err)
 	}
-	block, _ := pem.Decode(publicKey)
+	keyBytes, err := os.ReadFile(privateKeyPath)
+	if err != nil {
+		log.Println("Error in JWTKey->SetPrivateKey->ReadFile: ", err)
+		return
+	}
+	block, _ := pem.Decode(keyBytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Println("Error in JWTKey->SetPrivateKey->ParsePKCS1PrivateKey: ", err)
+		return
+	}
+	block, _ = pem.Decode(publicKey)
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
 		log.Fatalf("could not parse public key env variable: %s, error: %v", publicKey, err)
@@ -70,11 +85,11 @@ func main() {
 	}
 	bot, err := tgbotapi.NewBotAPI(telegramBotToken)
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf("incorrect $TELEGRAM_BOT_TOKEN env variable: %s, error: %v", telegramBotToken, err)
 	}
 
 	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive)
-	telegramService := telegramservice.NewTelegramService(bot, atWalletService)
+	telegramService := telegramservice.NewTelegramService(privateKey, bot, atWalletService)
 
 	router := httprouter.New()
 	urlPath := ""
@@ -87,7 +102,7 @@ func main() {
 	{
 		g.Add(func() error {
 			fmt.Println("telegram service starting")
-			telegramService.ListenAndServe()
+			telegramService.InitRouter()
 			return nil
 		}, func(err error) {
 			fmt.Println("telegram service stopping")
