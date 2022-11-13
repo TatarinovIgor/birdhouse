@@ -84,6 +84,23 @@ func (service ATWalletService) TokenDecode(token string) (*UserData, error) {
 	return &tokenData.Payload, nil
 }
 
+func (service ATWalletService) GetTransactions(jwtToken, token string,
+	account uuid.UUID) (*TransactionRequest, error) {
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
+		account.String() + ATWalletTransactions
+	session, _ := uuid.NewUUID()
+	result, err := service.requestToATWallet(URL, "GET", jwtToken, token, session.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	transactionResponse := TransactionRequest{}
+	err = json.NewDecoder(result).Decode(&transactionResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &transactionResponse, nil
+}
+
 func (service ATWalletService) FPFPayment(jwtToken, token, assetCode, asseIssuer string,
 	account uuid.UUID, amount float64, isDeposit bool) (*FPFPaymentResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +

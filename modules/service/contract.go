@@ -13,6 +13,7 @@ const (
 	ATWalletFPF                 = "/fpf"
 	ATWalletDepositTransaction  = "/deposit/transactions"
 	ATWalletWithdrawTransaction = "/withdraw/transactions"
+	ATWalletTransactions        = "/transactions"
 )
 
 type AuthResponse struct {
@@ -113,4 +114,20 @@ type DepositData struct {
 	StellarMemo      string `json:"stellar_memo"`
 	StartedAt        string `json:"started_at"`
 	CompletedAt      string `json:"completed_at"`
+}
+
+type TransactionRequest struct {
+	Transactions []TransactionData `json:"transactions"`
+}
+type TransactionData struct {
+	ID               string `json:"id"`
+	Status           string `json:"status"`
+	AmountIn         string `json:"amount_in"`
+	AmountOut        string `json:"amount_out"`
+	AmountFee        string `json:"amount_fee"`
+	StellarAccountID string `json:"stellar_account_id"`
+	StellarMemoType  string `json:"stellar_memo_type"`
+	StellarMemo      string `json:"stellar_memo"`
+	StartedAt        string `json:"started_at"`
+	Type             string `json:"type_operation"`
 }

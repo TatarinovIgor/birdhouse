@@ -24,20 +24,20 @@ func MakeCreateSignUPWithWalletBH(atWallet *service.ATWalletService) httprouter.
 		token, err := atWallet.SignUp(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusForbidden)
+			http.Error(w, "could not sign up new user", http.StatusForbidden)
 			return
 		}
 		result, err := atWallet.CreateStellarWallet(jwtToken, token.AccessToken,
 			"ccba7c71-27aa-40c3-9fe8-03db6934bc20", "BirdHouseClientAccount")
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "trying to create existing user", http.StatusFailedDependency)
 			return
 		}
 		_, err = fmt.Fprintf(w, "%s", result.GUID)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "could not parse user's guid", http.StatusFailedDependency)
 			return
 		}
 	}

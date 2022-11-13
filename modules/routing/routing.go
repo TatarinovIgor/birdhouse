@@ -22,8 +22,8 @@ func InitRouter(router *httprouter.Router, pathName string, atWallet *service.AT
 	routerWrap.GET("/withdraw", middleware.AuthMiddleware(atWallet, handler.MakeFPFLinkForWallet(atWallet, false)))
 	routerWrap.GET("/transfer/deposit", middleware.AuthMiddleware(atWallet, handler.TransferDeposit(atWallet)))
 	routerWrap.GET("/transfer/withdraw", middleware.AuthMiddleware(atWallet, handler.TransferWithdraw(atWallet)))
+	routerWrap.GET("/transaction", middleware.AuthMiddleware(atWallet, handler.GetTransactionList(atWallet)))
 
-	routerWrap.GET("/list_of_transaction", handler.ListOfTransaction)
 	// call backs for AT-Wallet
 	routerWrap.GET("/create_wallet_at", handler.MakeSignInAT(atWallet))
 	routerWrap.GET("/sign_in_at", handler.MakeSignInAT(atWallet))
