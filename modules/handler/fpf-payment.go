@@ -17,13 +17,13 @@ func MakeFPFLinkForWallet(atWallet *service.ATWalletService, isDeposit bool) htt
 		account := r.URL.Query().Get("acc_guid")
 		accountGUID, err := uuid.Parse(account)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "could not parse request data", http.StatusBadRequest)
 			return
 		}
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusForbidden)
+			http.Error(w, "could not get user data", http.StatusForbidden)
 			return
 		}
 		payment, err := atWallet.FPFPayment(jwtToken, token.AccessToken,
@@ -31,13 +31,13 @@ func MakeFPFLinkForWallet(atWallet *service.ATWalletService, isDeposit bool) htt
 			accountGUID, amount, isDeposit)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "error connecting to payment processor server", http.StatusFailedDependency)
 			return
 		}
 		_, err = fmt.Fprintf(w, "%s", payment.Action.Action)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "could not log the transaction", http.StatusInternalServerError)
 			return
 		}
 	}

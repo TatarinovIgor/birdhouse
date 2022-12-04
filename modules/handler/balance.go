@@ -24,19 +24,19 @@ func MakeGetBalance(atWallet *service.ATWalletService) httprouter.Handle {
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusForbidden)
+			http.Error(w, "could not parse request data", http.StatusBadRequest)
 			return
 		}
 		res, err := atWallet.GetBalance(jwtToken, token.AccessToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "could not get current balance", http.StatusFailedDependency)
 			return
 		}
 		err = json.NewEncoder(w).Encode(res)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "could not parse response from server", http.StatusInternalServerError)
 			return
 		}
 	}

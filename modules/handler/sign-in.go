@@ -15,13 +15,13 @@ func MakeSignInWalletBH(atWallet *service.ATWalletService) httprouter.Handle {
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "could not parse request data", http.StatusBadRequest)
 			return
 		}
 		err = json.NewEncoder(w).Encode(token)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "could not parse response from server", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -35,13 +35,13 @@ func MakeSignInAT(atWallet *service.ATWalletService) httprouter.Handle {
 		fmt.Println(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "error decoding token", http.StatusFailedDependency)
 			return
 		}
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "error encoding the response", http.StatusInternalServerError)
 			return
 		}
 	}

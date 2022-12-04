@@ -19,13 +19,13 @@ func TransferDeposit(atWallet *service.ATWalletService) httprouter.Handle {
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusForbidden)
+			http.Error(w, "could not parse request data", http.StatusBadRequest)
 			return
 		}
 		externalID, err := internal.GetExternalID(r.Context())
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "error getting user's id", http.StatusBadRequest)
 			return
 		}
 		deposit, err := atWallet.Deposit(jwtToken, token.AccessToken,
@@ -33,14 +33,14 @@ func TransferDeposit(atWallet *service.ATWalletService) httprouter.Handle {
 			accGuid, externalID, accountSenderInternalId, amount)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "error while performing transfer", http.StatusFailedDependency)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(deposit)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "could not parse response from server", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -55,13 +55,13 @@ func TransferWithdraw(atWallet *service.ATWalletService) httprouter.Handle {
 		token, err := atWallet.SignIn(jwtToken)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusForbidden)
+			http.Error(w, "could not parse request data", http.StatusBadRequest)
 			return
 		}
 		externalID, err := internal.GetExternalID(r.Context())
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "error getting user's id", http.StatusBadRequest)
 			return
 		}
 		deposit, err := atWallet.Withdraw(jwtToken, token.AccessToken,
@@ -69,14 +69,14 @@ func TransferWithdraw(atWallet *service.ATWalletService) httprouter.Handle {
 			accGuid, externalID, accountReceiverInternalId, amount)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusFailedDependency)
+			http.Error(w, "error while performing transfer", http.StatusFailedDependency)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(deposit)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "could not parse response from server", http.StatusInternalServerError)
 			return
 		}
 	}
