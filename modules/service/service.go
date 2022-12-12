@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -202,6 +203,26 @@ func (service ATWalletService) Withdraw(jwtToken, token, assetCode, asseIssuer, 
 	return &depositData, nil
 }
 
+func (service ATWalletService) KYCGetServer(jwtToken, token, accGuid string) (string, error) {
+	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar + ATWalletAccount + "/" +
+		accGuid + ATWalletTomlFile
+	session, _ := uuid.NewUUID()
+	result, err := service.requestToATWallet(URL, "GET", jwtToken, token, session.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	tomlBytes, err := io.ReadAll(result)
+	if err != nil {
+		return "", err
+	}
+	tomlConfig := TomlConfig{}
+	_, err = toml.Decode(string(tomlBytes), &tomlConfig)
+	if err != nil {
+		return "", err
+	}
+	return tomlConfig.KYCServer, nil
+}
+
 func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatformResponse, error) {
 	URL := service.getATWalletUrl() + ATWalletUserPlatform + ATWalletStellar
 	queryParam := "?include_accounts=true&include_assets=true"
@@ -249,8 +270,9 @@ func (service ATWalletService) authATWallet(token, session, url string) (*AuthRe
 	if err != nil {
 		return nil, fmt.Errorf("can't request for auth url: %s, err %v", url, err)
 	}
+	response, _ := io.ReadAll(result.Body)
 	if result.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("unexpected code from auth url: %s, code: %v", url, result.StatusCode)
+		return nil, fmt.Errorf("unexpected code from auth url: %s, code: %v", url, result.StatusCode, string(response))
 	}
 	err = json.NewDecoder(result.Body).Decode(&authResponse)
 	if err != nil {

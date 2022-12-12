@@ -68,12 +68,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
+
 	bot, err := tgbotapi.NewBotAPI(telegramBotToken)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive)
+
 	telegramService := telegramservice.NewTelegramService(bot, atWalletService)
 
 	router := httprouter.New()
