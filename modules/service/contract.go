@@ -14,6 +14,7 @@ const (
 	ATWalletDepositTransaction  = "/deposit/transactions"
 	ATWalletWithdrawTransaction = "/withdraw/transactions"
 	ATWalletTransactions        = "/transactions"
+	ATWalletTomlFile            = ".well-known/stellar.toml"
 )
 
 type AuthResponse struct {
@@ -130,4 +131,42 @@ type TransactionData struct {
 	StellarMemo      string `json:"stellar_memo"`
 	StartedAt        string `json:"started_at"`
 	Type             string `json:"type_operation"`
+}
+
+type EmailData struct {
+	Email          string `json:"email"`
+	EmailConfirmed bool   `json:"email_confirmed"`
+}
+
+type Authentication struct {
+	AuthenticationEmail EmailData `json:"email"`
+}
+
+type UsersData struct {
+	CreationDate   string         `json:"Created Date"`
+	ModifiedDate   string         `json:"Modified Date"`
+	UserSignedUp   bool           `json:"user_signed_up"`
+	Authentication Authentication `json:"authentication"`
+	FirstName      string         `json:"first_name_text"`
+	LastName       string         `json:"last_name_text"`
+	PhoneNumber    string         `json:"phone_text"`
+	Guid           string         `json:"guid_text"`
+	Balance        int            `json:"balance_number"`
+	Id             string         `json:"_id"`
+}
+
+type BubbleUsersResponse struct {
+	Cursor    int         `json:"cursor"`
+	Result    []UsersData `json:"results"`
+	Count     int         `json:"count"`
+	Remaining int         `json:"remaining"`
+}
+
+type BubbleUsersData struct {
+	Response BubbleUsersResponse `json:"response"`
+}
+
+type TomlConfig struct {
+	Version   string `toml:"VERSION"`
+	KYCServer string `toml:"KYC_SERVER"`
 }

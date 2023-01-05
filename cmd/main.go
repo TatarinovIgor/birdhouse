@@ -55,6 +55,14 @@ func main() {
 	if appGUIDStr == "" {
 		log.Fatal("$SEED env variable must be set")
 	}
+	walletUrl := os.Getenv("WALLET_URL")
+	if walletUrl == "" {
+		log.Fatal("$SEED env variable must be set")
+	}
+	walletKey := os.Getenv("WALLET_KEY")
+	if walletKey == "" {
+		log.Fatal("$SEED env variable must be set")
+	}
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		log.Fatalf("could not read public key: %s, error: %v", publicKey, err)
@@ -68,13 +76,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
+
 	bot, err := tgbotapi.NewBotAPI(telegramBotToken)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive)
-	telegramService := telegramservice.NewTelegramService(bot, atWalletService)
+
+	telegramService := telegramservice.NewTelegramService(bot, atWalletService, walletUrl, walletKey)
 
 	router := httprouter.New()
 	urlPath := ""
