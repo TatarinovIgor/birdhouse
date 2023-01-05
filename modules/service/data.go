@@ -7,10 +7,9 @@ import (
 	"net/http"
 )
 
-func (service ATWalletService) RequestToDatabase() (io.ReadCloser, error) {
+func (service ATWalletService) TelegramRequester(url string) (io.ReadCloser, error) {
 	client := http.Client{}
 	requestType := "GET"
-	url := "https://no-code-wallet.bird-house.org/version-test/api/1.1/obj/User?api_token=0c7c5967c58feaa9e93ee34e03e4cbc7"
 	request, err := http.NewRequest(requestType, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("can't make %s request for url: %s, err %v", requestType, url, err)
@@ -31,7 +30,8 @@ func (service ATWalletService) RequestToDatabase() (io.ReadCloser, error) {
 }
 
 func (service ATWalletService) GetUsersFromDatabase() (*[]UsersData, error) {
-	result, err := service.RequestToDatabase()
+	url := "https://no-code-wallet.bird-house.org/version-test/api/1.1/obj/User?api_token=0c7c5967c58feaa9e93ee34e03e4cbc7"
+	result, err := service.TelegramRequester(url)
 	if err != nil {
 		return nil, err
 	}

@@ -5,16 +5,21 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"strconv"
+	"strings"
 )
 
 type TelegramService struct {
-	bot      *tgbotapi.BotAPI
-	atWallet *service.ATWalletService
+	bot         *tgbotapi.BotAPI
+	atWallet    *service.ATWalletService
+	currentUser *service.UsersData
+	walletUrl   string
+	walletKey   string
 }
 
 var menu = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Main menu"),
+		tgbotapi.NewKeyboardButton("Main-menu"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Pay in"),
@@ -26,6 +31,9 @@ var menu = tgbotapi.NewReplyKeyboard(
 )
 
 var ButtonMenu = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonURL("Sign in", "https://no-code-wallet.bird-house.org/home"),
+	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Transaction list", "1"),
 	),
@@ -60,12 +68,18 @@ func (receiver *TelegramService) ListenAndServe() {
 				if _, err = bot.Send(msg); err != nil {
 					panic(err)
 				}
-			case "Main menu":
+			case "Main-menu":
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Menu:")
 				msg.ReplyMarkup = ButtonMenu
 				if _, err = bot.Send(msg); err != nil {
 					panic(err)
 				}
+			case "Link-Wallet":
+				receiver.LinkTelegram(update)
+			case "Deposit":
+				receiver.Deposit(update)
+			case "Withdraw":
+				receiver.Withdraw(update)
 			default:
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Menu")
 				if _, err = bot.Send(msg); err != nil {
@@ -89,10 +103,36 @@ func (receiver *TelegramService) ListenAndServe() {
 	}
 	fmt.Println("exit")
 }
-func NewTelegramService(bot *tgbotapi.BotAPI, atWallet *service.ATWalletService) *TelegramService {
-
+func NewTelegramService(bot *tgbotapi.BotAPI, atWallet *service.ATWalletService, walletUrl string, walletKey string) *TelegramService {
 	return &TelegramService{
-		bot:      bot,
-		atWallet: atWallet,
+		bot:       bot,
+		atWallet:  atWallet,
+		walletUrl: walletUrl,
+		walletKey: walletKey,
 	}
+}
+
+func (receiver TelegramService) LinkTelegram(update tgbotapi.Update) {
+	url := receiver.walletUrl + "/link-telegram/?phone=" + strings.Split(update.Message.Text, " ")[len(strings.Split(update.Message.Text, " "))] + "&telegram_token=" + strconv.FormatInt(update.Message.From.ID, 10) + "&api_token=" + receiver.walletKey
+	_, err := receiver.atWallet.TelegramRequester(url)
+	if err != nil {
+		panic(err)
+	}
+	print(update.Message.Text)
+}
+
+func (receiver TelegramService) Deposit(update tgbotapi.Update) {
+	_, err := receiver.atWallet.GetUsersFromDatabase()
+	if err != nil {
+		panic(err)
+	}
+	print(update.Message.Text)
+}
+
+func (receiver TelegramService) Withdraw(update tgbotapi.Update) {
+	_, err := receiver.atWallet.GetUsersFromDatabase()
+	if err != nil {
+		panic(err)
+	}
+	print(update.Message.Text)
 }

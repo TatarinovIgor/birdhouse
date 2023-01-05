@@ -23,12 +23,13 @@ func InitRouter(router *httprouter.Router, pathName string, atWallet *service.AT
 	routerWrap.GET("/transfer/deposit", middleware.AuthMiddleware(atWallet, handler.TransferDeposit(atWallet)))
 	routerWrap.GET("/transfer/withdraw", middleware.AuthMiddleware(atWallet, handler.TransferWithdraw(atWallet)))
 	routerWrap.GET("/transaction", middleware.AuthMiddleware(atWallet, handler.GetTransactionList(atWallet)))
-	routerWrap.GET("/kyc", middleware.AuthMiddleware(atWallet, handler.KYC(atWallet)))
+	routerWrap.GET("/checkout", handler.CheckoutPage())
 
 	// call backs for AT-Wallet
 	routerWrap.GET("/create_wallet_at", handler.MakeSignInAT(atWallet))
 	routerWrap.GET("/sign_in_at", handler.MakeSignInAT(atWallet))
 
+	routerWrap.GET("/tg_auth", handler.TgAuth(atWallet))
 	// documentation for developers
 	opts := swagger.SwaggerUIOpts{SpecURL: "swagger.yaml"}
 	sh := swagger.SwaggerUI(opts, nil)
