@@ -1,178 +1,262 @@
-consumes:
-- application/json
-info:
-  title: Birdhouse
-  version: 0.1.0
-produces:
-- application/json
-schemes:
-- http
 swagger: "2.0"
+info:
+  title: Crypto Processing
+  version: 0.1.0
+  description: "'auth_key' is a jwt token encoded with RS256 see example of token here: https://jwt.io/#debugger-io?token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7ImV4dGVybmFsX2lkIjoiUnEreGZaaHdnVFpzVkNZQ3ZKSFh2RHg1Z2JMazdqeDZtNzVUSTNuWUpXVT0iLCJmaXJzdF9uYW1lIjoiSWdvciIsImxhc3RfbmFtZSI6IlRhdGFyaW5vdiIsImVtYWlsIjoiaWcudGF0YXJpbm92KzExQGdtYWlsLmNvbSIsInBob25lIjoiKzM1Nzk2NTg0MjEzIn0sImlhdCI6MTY2MzAwOTQ3NiwiZXhwIjoxNjYzMDUyNjc2LCJzdWIiOiIxMjM0NTY3ODkifQ.1L9Gb4hPkQ9r9QS8xi6XLyYddEp9o75HI02hiBd_ncJvZpUAoN1HM0XSn10k6Ee5Cn9mmyWSymP4CbHC4jVVH1d4OScWuxAF3XdEl5ejm9JF4d92gY3Fq4VC41Ws2IFTEFYu-_ts7y4glrUYtN0IDFLdB7VIYKjK8x910e_aKFeDq0CdJttSnkoQF7QXN-muTJ9l_iEwPkAe-M2IlcYqXbLnr_7lQwAN8XCE4SX1C2AQKhkMg71gqDVLnja21M2bkVV1eBd0sS_OWjIUKS0zG03KcYMS1lK80XpQsElqImPDZUpae9sGAhz7o2EmxBdqzL1BzPscj1PelJ_HDxmUcw "
+produces:
+  - application/json
+schemes:
+  - http
+basePath: /api/v1/crypto/tron
+
+
+securityDefinitions:
+  AuthToken:
+    type: apiKey
+    in: header
+    name: auth_key
+
+definitions:
+  transactions_time_range:
+    required:
+      - from_unix
+      - to_unix
+    properties:
+      from_unix:
+        type: integer
+        description: unix time from transaction listed
+        example: '1672752742'
+      to_unix:
+        type: integer
+        description: unix time before transaction listed
+        example: '1672752742'
+
+  blockchain:
+    required:
+      - blockchain
+    properties:
+      blockchain:
+        type: string
+        description: a blockchain from which to get balance
+        example: "Tron"
+
+  credentials_deposit:
+    required:
+      - amount
+      - blockchain
+    properties:
+      amount:
+        type: integer
+        description: an amount to deposit or withdraw
+        example: "90"
+      blockchain:
+        type: string
+        description: a blockchain from which to get balance
+        example: "Tron"
+
+  credentials_withdraw:
+    required:
+      - amount
+      - blockchain
+      - wallet_address
+    properties:
+      amount:
+        type: integer
+        description: an amount to deposit or withdraw
+        example: "90"
+      blockchain:
+        type: string
+        description: a blockchain from which to get balance
+        example: "Tron"
+      wallet_address:
+        type: string
+        description: a wallet to deposit
+        example: "TU6JdEDQGPus64LTMksvnxF2cv4FQrXPCa"
+
+  withdraw_response:
+    properties:
+      memo_hash:
+        type: string
+        description: transaction memo
+        example: "b842419ab246884a31dce44d410ba2f0e6e7ad0ae885680a8bf164588085096a"
+
+
+  deposit_response:
+    required:
+      - wallet_address
+    properties:
+      wallet_address:
+        type: string
+        description: a wallet to deposit
+        example: "TU6JdEDQGPus64LTMksvnxF2cv4FQrXPCa"
+      memo_hash:
+        type: string
+        description: transaction memo
+        example: "b842419ab246884a31dce44d410ba2f0e6e7ad0ae885680a8bf164588085096a"
+
+  balance:
+    required:
+      - amount
+      - blockchain
+      - asset
+    properties:
+      amount:
+        type: number
+        description: an amount to deposit or withdraw
+        example: "90"
+      blockchain:
+        type: string
+        description: a blockchain from which to get balance
+        example: "Tron"
+      asset:
+        type: string
+        description: ticker of the asset
+        example: "TRX"
+
+  transactions:
+    required:
+      - amount
+      - blockchain
+      - is_deposit
+      - external_id
+      - asset
+      - timestamp
+    properties:
+      amount:
+        type: number
+        description: an amount that was deposited or withdrew
+        example: "90"
+      blockchain:
+        type: string
+        description: a blockchain from which to get balance
+        example: "Tron"
+      is_deposit:
+        type: boolean
+        description: true if transaction was deposit
+        example: "true"
+      external_id:
+        type: string
+        description: an id of the transaction
+        example: "b842419ab246884a31dce44d410ba2f0e6e7ad0ae885680a8bf164588085096a"
+      asset:
+        type: string
+        description: ticker of the asset
+        example: "TRX"
+      timestamp:
+        type: integer
+        description: unix time of the transaction
+        example: '1672752742'
 
 paths:
-  /create_wallet_bh:
+  /deposit:
     post:
       tags:
         - Requests
+      security:
+        - AuthToken: []
+      produces:
+        - application/json
       parameters:
-        - name: auth_key
-          in: query
-          type: string
-          format: jwt
+        - in: body
+          name: ''
+          schema:
+            allOf: [
+              {
+                $ref: '#/definitions/credentials_deposit'
+              }
+            ]
       responses:
         200:
-          description: successful wallet creation
+          description: wallet to deposit and hash of the transaction
           schema:
-            type: string
-            example: "ab54ee14-15f1-4ce5-bcc3-6559451354da"
+            allOf: [ {
+              $ref: '#/definitions/deposit_response'
+            } ]
         400:
-          description: failed parsing token
+          description: error appeared
           schema:
             type: string
-            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
-        424:
-          description: failed dependency
-          schema:
-            type: string
-        403:
-          description: forbidden
-          schema:
-            type: string
-  /sign_in_wallet_bh:
+  /withdraw:
     post:
       tags:
         - Requests
+      security:
+        - AuthToken: []
+      produces:
+        - application/json
       parameters:
-        - name: auth_key
-          in: query
-          type: string
-          format: jwt
+        - in: body
+          name: ''
+          schema:
+            allOf: [
+              {
+                $ref: '#/definitions/credentials_withdraw'
+              }
+            ]
       responses:
         200:
-          description: successful wallet sign in
+          description: hash of the transaction
           schema:
-            type: object
-            description: json with tokens and their expiration
+            allOf: [ {
+              $ref: '#/definitions/withdraw_response'
+            } ]
         400:
-          description: failed parsing token
-          schema:
-            type: string
-            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
-        424:
-          description: failed dependency
-          schema:
-            type: string
-        500:
-          description: internal error, cant parse the response
-          schema:
-            type: string
-  /deposit_wallet_link:
-    get:
-      tags:
-        - Requests
-      parameters:
-        - name: auth_key
-          in: query
-          type: string
-          format: jwt
-        - name: amount
-          in: query
-          type: integer
-        - name: acc_guid
-          in: query
-          type: string
-          description: guid given by api of account, should be same account as encoded in jwt
-      responses:
-        200:
-          description: successful wallet creation
-          schema:
-            description: link to the iframe for deposit
-            type: string
-        400:
-          description: failed parsing guid or token
-          schema:
-            type: string
-            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
-        403:
-          description: failed to authenticate with given token
-          schema:
-            type: string
-        424:
-          description: failed to initiate deposit
-          schema:
-            type: string
-        500:
-          description: internal error, cant parse the response
-          schema:
-            type: string
-  /withdraw_wallet_link:
-    get:
-      tags:
-        - Requests
-      parameters:
-        - name: auth_key
-          in: query
-          type: string
-          format: jwt
-        - name: amount
-          in: query
-          type: integer
-        - name: acc_guid
-          in: query
-          type: string
-          description: guid given by api of account, should be same account as encoded in jwt
-      responses:
-        200:
-          description: link to the iframe for withdraw
-          schema:
-            type: string
-            example: "ab54ee14-15f1-4ce5-bcc3-6559451354da"
-        400:
-          description: failed parsing guid or token
-          schema:
-            type: string
-            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
-        403:
-          description: failed to authenticate with given token
-          schema:
-            type: string
-        424:
-          description: failed to initiate withdraw
-          schema:
-            type: string
-        500:
-          description: internal error, cant parse the response
+          description: error appeared
           schema:
             type: string
   /get_balance:
     get:
       tags:
         - Requests
+      security:
+        - AuthToken: []
+      produces:
+        - application/json
       parameters:
-        - name: auth_key
-          in: query
-          type: string
-          format: jwt
+        - in: body
+          name: ''
+          schema:
+            allOf: [
+              {
+                $ref: '#/definitions/blockchain'
+              }
+            ]
       responses:
         200:
-          description: link to the iframe for withdraw
+          description: current balance
           schema:
-            type: string
-            example: "ab54ee14-15f1-4ce5-bcc3-6559451354da"
+            allOf: [{
+                      $ref: '#/definitions/balance'
+            }]
         400:
-          description: failed parsing guid or token
+          description: error appeared
           schema:
             type: string
-            example: "can't parse token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHRlcm5hbF9pZCI6IjIyMjIyMjMzMzMzMzMzMzMzMzMzIiwiZmlyc3RfbmFtZSI6Iklnb3IiLCJsYXN0X25hbWUiOiJUYXRhcmlub3YiLCJlbWFpbCI6ImlnLnRhdGFyaW5vdkBnbWFpbC5jb20iLCJwaG9uZSI6IiszNTc5NjIyMjMzMyJ9.C4bu62Mh_EnvMX6nGOpWQcQ0b5oH_6SdeIXHDpPjEzs, err: failed to verify jws signature: failed to verify message: crypto/rsa: verification error"
-        403:
-          description: failed to authenticate with given token
+  /transaction:
+    get:
+      tags:
+        - Requests
+      security:
+        - AuthToken: []
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: ''
           schema:
-            type: string
-        424:
-          description: failed to get balance
+            allOf: [
+              {
+                $ref: '#/definitions/transactions_time_range'
+              }
+            ]
+      responses:
+        200:
+          description: json with transactions
           schema:
-            type: string
-        500:
-          description: internal error, cant parse the response
+            allOf: [ {
+              $ref: '#/definitions/transactions'
+            } ]
+        400:
+          description: error appeared
           schema:
             type: string
