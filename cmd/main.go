@@ -1,20 +1,22 @@
 package main
 
 import (
-	"birdhouse/modules/routing"
-	"birdhouse/modules/service"
-	telegramservice "birdhouse/modules/telegram-service"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
-	"github.com/julienschmidt/httprouter"
-	"github.com/oklog/run"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
+	"github.com/oklog/run"
+
+	"birdhouse/modules/routing"
+	"birdhouse/modules/service"
+	telegramservice "birdhouse/modules/telegram-service"
 )
 
 // @title Example API
