@@ -18,7 +18,7 @@ func InitRouter(router *httprouter.Router, pathName string, atWallet *service.AT
 	routerWrap.GET("/deposit_wallet_link", middleware.AuthMiddleware(atWallet, handler.MakeFPFLinkForWallet(atWallet, true)))
 	routerWrap.GET("/withdraw_wallet_link", middleware.AuthMiddleware(atWallet, handler.MakeFPFLinkForWallet(atWallet, false)))
 	routerWrap.GET("/get_balance", middleware.AuthMiddleware(atWallet, handler.MakeGetBalance(atWallet)))
-	routerWrap.GET("/deposit", middleware.AuthMiddleware(atWallet, handler.MakeFPFLinkForWallet(atWallet, true)))
+	routerWrap.GET("/deposit", handler.MakeFPFLinkForWallet(atWallet, true))
 	routerWrap.GET("/withdraw", middleware.AuthMiddleware(atWallet, handler.MakeFPFLinkForWallet(atWallet, false)))
 	routerWrap.GET("/transfer/deposit", middleware.AuthMiddleware(atWallet, handler.TransferDeposit(atWallet)))
 	routerWrap.GET("/transfer/withdraw", middleware.AuthMiddleware(atWallet, handler.TransferWithdraw(atWallet)))

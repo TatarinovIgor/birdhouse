@@ -2,42 +2,30 @@ package handler
 
 import (
 	"birdhouse/modules/service"
-	"fmt"
-	"github.com/google/uuid"
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 func MakeFPFLinkForWallet(atWallet *service.ATWalletService, isDeposit bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		jwtToken := r.URL.Query().Get("auth_key")
-		amount, _ := strconv.ParseFloat(r.URL.Query().Get("amount"), 64)
-		account := r.URL.Query().Get("acc_guid")
-		accountGUID, err := uuid.Parse(account)
+		var DepositRequest service.DepositRequest
+		err := json.NewDecoder(r.Body).Decode(&DepositRequest)
 		if err != nil {
-			http.Error(w, "could not parse request data", http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		token, err := atWallet.SignIn(jwtToken)
+		deposit, err := atWallet.CreateStellarDeposit(DepositRequest.ExternalID, DepositRequest.MerchantID, DepositRequest.Blockchain)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "could not get user data", http.StatusForbidden)
+			http.Error(w, "could not perform deposit", http.StatusBadRequest)
 			return
 		}
-		payment, err := atWallet.FPFPayment(jwtToken, token.AccessToken,
-			"ATUSD", "GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH",
-			accountGUID, amount, isDeposit)
+		err = json.NewEncoder(w).Encode(deposit)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "error connecting to payment processor server", http.StatusFailedDependency)
-			return
-		}
-		_, err = fmt.Fprintf(w, "%s", payment.Action.Action)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "could not log the transaction", http.StatusInternalServerError)
+			http.Error(w, "could not parse response from server", http.StatusInternalServerError)
 			return
 		}
 	}

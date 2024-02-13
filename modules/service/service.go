@@ -1,10 +1,12 @@
 package service
 
 import (
+	"birdhouse/modules/storage"
 	"bytes"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/google/uuid"
@@ -15,8 +17,12 @@ import (
 	"github.com/stellar/go/network"
 	stellar "github.com/stellar/go/txnbuild"
 	"io"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -26,6 +32,7 @@ type ATWalletService struct {
 	appGUID          uuid.UUID
 	tokenTimeToLive  int64
 	seed             string
+	store            *storage.KeysPSQL
 }
 
 func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
@@ -240,7 +247,7 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	return &userPlatformResponse, nil
 }
 
-func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64) *ATWalletService {
+func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64, store *storage.KeysPSQL) *ATWalletService {
 
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
@@ -248,6 +255,7 @@ func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}
 		appGUID:          appGUID,
 		tokenTimeToLive:  tokenTimeToLive,
 		seed:             seed,
+		store:            store,
 	}
 }
 
@@ -427,4 +435,245 @@ func generateRandom(n int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+type Transaction struct {
+	NetworkPassphrase string `json:"network_passphrase"`
+	Transaction       string `json:"transaction"`
+}
+
+type TokenResponse struct {
+	Token string `json:"token"`
+}
+
+type InteractiveResp struct {
+	ID  string `json:"id"`
+	URL string `json:"URL"`
+}
+
+// ToDo refactor
+func (service ATWalletService) CreateStellarDeposit(externalId, merchantId, blockchain string) (InteractiveResp, error) {
+
+	walletAddress, walletSeed, err := service.GetExistingWallet(externalId, merchantId, blockchain)
+
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+
+	wellKnownResp, err := http.Get("https://gollum-sep24.armenotech.net/gollum/api/v1/sep0024/info")
+	homeDomain := "gollum-sep24.armenotech.net"
+	clientDomain := "demo-wallet-server.stellar.org"
+	singingKey := "GBU5DCUJV5CNGNWHG4ABGDI37AMXEQFKCRBPY7YYRYRVKTIPF35P6CJE" //ToDo fetch from toml
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	_, err = ioutil.ReadAll(wellKnownResp.Body)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	sep0010Resp, err := http.Get("https://" + homeDomain + "/gollum/api/v1/sep0010?account=" + walletAddress + "&home_domain=" + homeDomain + "&client_domain=" + clientDomain)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	sep0010, err := ioutil.ReadAll(sep0010Resp.Body)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	var transaction Transaction
+	err = json.Unmarshal(sep0010, &transaction)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	token, err := SignTransaction(walletSeed, singingKey, transaction.Transaction)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+
+	client := &http.Client{}
+
+	form := url.Values{}
+	form.Add("asset_code", "ATUSD")
+	form.Add("account", walletAddress)
+	form.Add("lang", "en")
+	form.Add("claimable_balance_supported", "false")
+
+	bearer := "Bearer " + token
+
+	interactiveReq, err := http.NewRequest("POST", "https://gollum-sep24.armenotech.net/gollum/api/v1/sep0024/transactions/deposit/interactive", strings.NewReader(form.Encode()))
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	interactiveReq.Header.Add("Authorization", bearer)
+	interactiveReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := client.Do(interactiveReq)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	res := InteractiveResp{}
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	return res, nil
+}
+
+func SignTransaction(Seed, SigningKey, XDR string) (string, error) {
+	kp, err := keypair.Parse(Seed)
+	if err != nil {
+		return "", fmt.Errorf("can't parse sender key, error: %v", err)
+	}
+
+	domains := []string{"demo-wallet-server.stellar.org", "gollum-sep24.armenotech.net"}
+	val, challengeFor, _, err := stellar.ReadChallengeTx(XDR, SigningKey, network.TestNetworkPassphrase, "gollum-sep24.armenotech.net", domains)
+	if err != nil {
+		return "", err
+	}
+
+	if challengeFor != kp.Address() {
+		return "", nil
+	}
+	tx := val
+	tx, err = tx.Sign(network.TestNetworkPassphrase, kp.(*keypair.Full))
+	if err != nil {
+		return "", fmt.Errorf("can't sign transaction, error: %v", err)
+	}
+	txe, err := tx.Base64()
+	if err != nil {
+		return "", fmt.Errorf("can't convert to base 64, error: %v", err)
+	}
+	fmt.Println(txe)
+
+	authXDR := map[string]interface{}{
+		"transaction": txe,
+	}
+	authBody, err := json.Marshal(authXDR)
+	if err != nil {
+		return "", err
+	}
+
+	resultAuth, err := http.Post("https://gollum-sep24.armenotech.net/gollum/api/v1/sep0010", "application/json", bytes.NewReader(authBody))
+	if err != nil {
+		return "", err
+	}
+
+	token := struct {
+		Token string `json:"token"`
+	}{}
+	if err := json.NewDecoder(resultAuth.Body).Decode(&token); err != nil {
+		return "", err
+	}
+
+	fmt.Println(token.Token)
+
+	return token.Token, nil
+}
+
+type Wallet struct {
+	WalletAddress string `json:"wallet_address"`
+	WalletSeed    string `json:"wallet_seed"`
+	Blockchain    string `json:"blockchain"`
+}
+
+func (service ATWalletService) CreateWallet(externalId, merchantId string) (string, string, string, error) {
+	pair, err := keypair.Random()
+	if err != nil {
+		return "", "", "", err
+	}
+	wallet := pair.Address()
+	seed := pair.Seed()
+
+	resp, err := http.Get("https://friendbot.stellar.org/?addr=" + wallet)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", "", err
+	}
+	fmt.Println(string(body))
+
+	clientStellar := horizonclient.DefaultTestNetClient
+	ar := horizonclient.AccountRequest{AccountID: pair.Address()}
+	sourceAccount, err := clientStellar.AccountDetail(ar)
+
+	asset, err := stellar.ParseAssetString("ATUSD:GBT4VVTDPCNA45MNWX5G6LUTLIEENSTUHDVXO2AQHAZ24KUZUPLPGJZH")
+	if err != nil {
+		return "", "", "", err
+	}
+	op := stellar.ChangeTrust{
+		SourceAccount: wallet,
+		Line:          asset.MustToChangeTrustAsset(),
+		Limit:         stellar.MaxTrustlineLimit,
+	}
+
+	tx, err := stellar.NewTransaction(
+		stellar.TransactionParams{
+			SourceAccount:        &sourceAccount,
+			IncrementSequenceNum: true,
+			Operations:           []stellar.Operation{&op},
+			BaseFee:              stellar.MinBaseFee,
+			Preconditions:        stellar.Preconditions{TimeBounds: stellar.NewInfiniteTimeout()}, // Use a real timeout in production!
+
+		},
+	)
+
+	// Sign the transaction
+	tx, err = tx.Sign(network.TestNetworkPassphrase, pair)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// Get the base 64 encoded transaction envelope
+	txe, err := tx.Base64()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// Send the transaction to the network
+	_, err = clientStellar.SubmitTransactionXDR(txe)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return seed, wallet, wallet, nil
+}
+
+func (service ATWalletService) GetExistingWallet(externalId, merchantId, blockchain string) (string, string, error) {
+
+	wallet := Wallet{Blockchain: blockchain}
+
+	_, key, walletByte, err := service.store.GetByUser(merchantId, externalId)
+
+	if err != nil && errors.Is(err, storage.ErrNotFound) {
+
+		wallet.WalletSeed, wallet.WalletAddress, key, err = service.CreateWallet(merchantId, externalId)
+		if err != nil {
+			return "", "", err
+		}
+
+		wallet.Blockchain = blockchain
+		value, err := json.Marshal(wallet)
+		if err != nil {
+			return "", "", err
+		}
+
+		_, err = service.store.Put(merchantId, externalId, key, value)
+		if err != nil {
+			return "", "", err
+		}
+
+	} else if err != nil {
+		return "", "", err
+	} else {
+		err = json.Unmarshal(walletByte, &wallet)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	return wallet.WalletAddress, wallet.WalletSeed, err
 }

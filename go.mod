@@ -3,17 +3,18 @@ module birdhouse
 go 1.18
 
 require (
+	github.com/BurntSushi/toml v1.2.1
 	github.com/go-openapi/runtime v0.24.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lestrrat-go/jwx v1.2.25
+	github.com/lib/pq v1.2.0
 	github.com/oklog/run v1.1.0
 	github.com/stellar/go v0.0.0-20220902181744-56a707d71997
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect

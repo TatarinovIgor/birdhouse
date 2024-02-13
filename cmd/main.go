@@ -1,22 +1,21 @@
 package main
 
 import (
+	"birdhouse/internal"
+	"birdhouse/modules/routing"
+	"birdhouse/modules/service"
+	"birdhouse/modules/storage"
+	stream_service "birdhouse/modules/stream-service"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
+	"github.com/oklog/run"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
-	"github.com/julienschmidt/httprouter"
-	"github.com/oklog/run"
-
-	"birdhouse/modules/routing"
-	"birdhouse/modules/service"
-	telegramservice "birdhouse/modules/telegram-service"
 )
 
 // @title Example API
@@ -27,7 +26,8 @@ import (
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal("$PORT env variable must be set")
+		port = "8081"
+		log.Fatal("$PORT env was not found, running default at 8081")
 	}
 	basePath := os.Getenv("BASE_PATH")
 	if basePath == "" {
@@ -59,11 +59,11 @@ func main() {
 	}
 	walletUrl := os.Getenv("WALLET_URL")
 	if walletUrl == "" {
-		log.Fatal("$SEED env variable must be set")
+		log.Fatal("$WALLET_URL env variable must be set")
 	}
 	walletKey := os.Getenv("WALLET_KEY")
 	if walletKey == "" {
-		log.Fatal("$SEED env variable must be set")
+		log.Fatal("$WALLET_KEY env variable must be set")
 	}
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
@@ -79,14 +79,21 @@ func main() {
 		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI(telegramBotToken)
+	//bot, err := tgbotapi.NewBotAPI(telegramBotToken)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive)
+	db := internal.DBConnect()
+	store, err := storage.NewKeys("wallets", db)
+	if err != nil {
+		log.Fatalf("could not make store for Wallets, error: %v", err)
+	}
 
-	telegramService := telegramservice.NewTelegramService(bot, atWalletService, walletUrl, walletKey)
+	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive, store)
+	//telegramService := telegramservice.NewTelegramService(bot, atWalletService, walletUrl, walletKey)
+
+	//db := internal.DBConnect()
 
 	router := httprouter.New()
 	urlPath := ""
@@ -99,10 +106,20 @@ func main() {
 	{
 		g.Add(func() error {
 			fmt.Println("telegram service starting")
-			telegramService.ListenAndServe()
+			//telegramService.ListenAndServe()
 			return nil
 		}, func(err error) {
 			fmt.Println("telegram service stopping")
+		})
+	}
+	// Stream transactions
+	{
+		g.Add(func() error {
+			fmt.Println("stream service starting")
+			stream_service.ListenAndServe()
+			return nil
+		}, func(err error) {
+			fmt.Println("stream service stopping")
 		})
 	}
 	// REST API

@@ -33,11 +33,19 @@ type TokenData struct {
 
 type UserData struct {
 	ExternalID string `json:"external_id"`
+	MerchantID string `json:"merchant_id"`
 	FirsName   string `json:"first_name"`
 	LastName   string `json:"last_name"`
 	Email      string `json:"email"`
 	Phone      string `json:"phone"`
 }
+
+type DepositRequest struct {
+	ExternalID string `json:"external_id"`
+	MerchantID string `json:"merchant_id"`
+	Blockchain string `json:"blockchain"`
+}
+
 type Asset struct {
 	Platform  string `json:"platform"`
 	Code      string `json:"code"`
