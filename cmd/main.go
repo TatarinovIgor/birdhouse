@@ -5,7 +5,6 @@ import (
 	"birdhouse/modules/routing"
 	"birdhouse/modules/service"
 	"birdhouse/modules/storage"
-	stream_service "birdhouse/modules/stream-service"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -41,6 +40,10 @@ func main() {
 	if appGUIDStr == "" {
 		log.Fatal("$PUBLIC_KEY env variable must be set")
 	}
+	privateKeyPath := os.Getenv("PRIVATE_KEY")
+	if appGUIDStr == "" {
+		log.Fatal("$PRIVATE_KEY env variable must be set")
+	}
 	tokenTimeToLiveStr := os.Getenv("TOKEN_TIME_TO_LIVE")
 	if tokenTimeToLiveStr == "" {
 		log.Fatal("$TOKEN_TIME_TO_LIVE env variable must be set")
@@ -65,6 +68,35 @@ func main() {
 	if walletKey == "" {
 		log.Fatal("$WALLET_KEY env variable must be set")
 	}
+
+	appGUID, err := uuid.Parse(appGUIDStr)
+	if err != nil {
+		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
+	}
+	systemWallet := os.Getenv("SYSTEM_WALLET")
+	if systemWallet == "" {
+		log.Fatal("$SYSTEM_WALLET env variable must be set")
+	}
+	systemWalletSeed := os.Getenv("SYSTEM_WALLET_SEED")
+	if systemWalletSeed == "" {
+		log.Fatal("$SYSTEM_WALLET_SEED env variable must be set")
+	}
+	tokenCode := os.Getenv("TOKEN_CODE")
+	if tokenCode == "" {
+		log.Fatal("$TOKEN_CODE env variable must be set")
+	}
+	tokenBlockchain := os.Getenv("TOKEN_BLOCKCHAIN")
+	if tokenBlockchain == "" {
+		log.Fatal("$TOKEN_BLOCKCHAIN env variable must be set")
+	}
+	tokenIssuer := os.Getenv("TOKEN_ISSUER")
+	if tokenIssuer == "" {
+		log.Fatal("$TOKEN_ISSUER env variable must be set")
+	}
+	processorUrl := os.Getenv("PROCESSOR_URL")
+	if processorUrl == "" {
+		log.Fatal("$PROCESSOR_URL env variable must be set")
+	}
 	publicKey, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		log.Fatalf("could not read public key: %s, error: %v", publicKey, err)
@@ -74,11 +106,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not parse public key env variable: %s, error: %v", publicKey, err)
 	}
-	appGUID, err := uuid.Parse(appGUIDStr)
+	privateKey, err := os.ReadFile(privateKeyPath)
 	if err != nil {
-		log.Fatalf("incorrect $APP_GUID env variable: %s, error: %v", appGUIDStr, err)
+		log.Fatalf("could not read private key: %s, error: %v", privateKeyPath, err)
 	}
-
+	block, _ = pem.Decode(privateKey)
+	if block == nil {
+		panic("failed to parse PEM block containing the private key")
+	}
+	private, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatalf("could not parse private key env variable: %s, error: %v", privateKeyPath, err)
+	}
 	//bot, err := tgbotapi.NewBotAPI(telegramBotToken)
 	if err != nil {
 		log.Panic(err)
@@ -90,7 +129,7 @@ func main() {
 		log.Fatalf("could not make store for Wallets, error: %v", err)
 	}
 
-	atWalletService := service.NewATWalletService(basePath, seed, pub, appGUID, tokenTimeToLive, store)
+	atWalletService := service.NewATWalletService(basePath, seed, systemWallet, systemWalletSeed, tokenCode, tokenBlockchain, tokenIssuer, processorUrl, pub, private, appGUID, tokenTimeToLive, store)
 	//telegramService := telegramservice.NewTelegramService(bot, atWalletService, walletUrl, walletKey)
 
 	//db := internal.DBConnect()
@@ -116,7 +155,7 @@ func main() {
 	{
 		g.Add(func() error {
 			fmt.Println("stream service starting")
-			stream_service.ListenAndServe()
+			atWalletService.ListenAndServe()
 			return nil
 		}, func(err error) {
 			fmt.Println("stream service stopping")

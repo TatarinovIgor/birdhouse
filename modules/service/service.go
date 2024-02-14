@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BurntSushi/toml"
+	encoder "github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -22,6 +23,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,10 +31,143 @@ import (
 type ATWalletService struct {
 	baseWalletURL    string
 	requestPublicKey interface{}
+	privateKey       interface{}
 	appGUID          uuid.UUID
 	tokenTimeToLive  int64
 	seed             string
 	store            *storage.KeysPSQL
+	systemWallet     string
+	systemWalletSeed string
+
+	tokenCode       string
+	tokenBlockchain string
+	tokenIssuer     string
+	processorUrl    string
+}
+
+type TokenPayload struct {
+	ExternalId string `json:"external_id"`
+	MerchantID string `json:"merchant_id"`
+}
+
+type MintData struct {
+	Code       string `json:"code"`
+	Blockchain string `json:"blockchain"`
+	Amount     string `json:"amount"`
+	Issuer     string `json:"issuer"`
+}
+
+type MintTokenResponse struct {
+	Issuer string
+	TxHash string
+}
+
+func (service ATWalletService) CreateToken(externalID, merchantID string) (string, error) {
+	token := encoder.New(encoder.SigningMethodRS256)
+	var tokenToSend TokenPayload
+	tokenToSend.MerchantID = merchantID
+	tokenToSend.ExternalId = externalID
+	claims := token.Claims.(encoder.MapClaims)
+	claims["exp"] = time.Now().Add(10 * time.Minute).Unix()
+	claims["payload"] = tokenToSend
+	tokenString, err := token.SignedString(service.privateKey)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+func (service ATWalletService) MintTokensOnProcessing(externalID, merchantID, amount string) error {
+	token, err := service.CreateToken(externalID, merchantID)
+	if err != nil {
+		return err
+	}
+	var mintData = MintData{Code: service.tokenCode, Blockchain: service.tokenBlockchain, Amount: amount, Issuer: service.tokenIssuer}
+	mintDataParsed, err := json.Marshal(mintData)
+	r, err := http.NewRequest("POST", service.processorUrl, bytes.NewBuffer(mintDataParsed))
+	if err != nil {
+		return err
+	}
+
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Authorization", token)
+
+	client := &http.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+	var responseMint MintTokenResponse
+	err = json.NewDecoder(res.Body).Decode(&responseMint)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusCreated {
+		return err
+	}
+	log.Println(responseMint.TxHash, responseMint.Issuer)
+	return nil
+}
+
+func (service ATWalletService) ProcessDeposit(Seed, Issuer, Code, externalID, merchantID string, amount float64) error {
+	stellarTransactionText, err := service.BuildStellarTransactionText(Seed, Issuer, Code, service.systemWallet, "", amount)
+	if err != nil {
+		return err
+	}
+	log.Println(stellarTransactionText)
+	strAmount := fmt.Sprintf("%f", amount)
+	err = service.MintTokensOnProcessing(externalID, merchantID, strAmount)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (service ATWalletService) ListenAndServe() {
+	ticker := time.NewTicker(time.Second * 1)
+	next := int64(0)
+	for {
+		select {
+		case <-ticker.C:
+			records, err := service.store.GetNext(next, 1)
+			if err != nil || len(records) == 0 {
+				next = 0
+				if err != nil {
+					log.Println("Error while getting DB records:", err)
+				}
+			} else if strings.Contains(records[0].ExternalID, records[0].MerchantID) {
+				next = records[0].ID
+				continue
+			} else {
+				record := records[len(records)-1]
+				accountRequest := horizonclient.AccountRequest{AccountID: record.Key}
+				client := horizonclient.DefaultTestNetClient
+
+				account, err := client.AccountDetail(accountRequest)
+				if err != nil {
+					return
+				}
+				for i := 0; i < len(account.Balances); i++ {
+					if account.Balances[i].Code == "ATUSD" {
+						log.Println("Account has:", account.Balances[i].Balance)
+						wallet := Wallet{}
+						err = json.Unmarshal(record.Data, &wallet)
+						if err != nil {
+							log.Println("Unable to parse wallet for processing, err:", err)
+						}
+						parsedBalance, err := strconv.ParseFloat(account.Balances[i].Balance, 64)
+						if err != nil {
+							log.Println("Unable to parse wallet for processing, err:", err)
+						}
+						service.ProcessDeposit(wallet.WalletSeed, account.Balances[i].Issuer, account.Balances[i].Code, record.ExternalID, record.MerchantID, parsedBalance)
+
+					}
+				}
+				next = record.ID
+			}
+		}
+	}
 }
 
 func (service ATWalletService) SignUp(token string) (*AuthResponse, error) {
@@ -194,7 +329,7 @@ func (service ATWalletService) Withdraw(jwtToken, token, assetCode, asseIssuer, 
 		return nil, err
 	}
 
-	_, err = service.BuildStellarTransactionText(service.seed, asseIssuer, depositResponse.StellarAccountID, memo, amount)
+	_, err = service.BuildStellarTransactionText(service.seed, asseIssuer, assetCode, depositResponse.StellarAccountID, memo, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +382,7 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	return &userPlatformResponse, nil
 }
 
-func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64, store *storage.KeysPSQL) *ATWalletService {
+func NewATWalletService(baseWalletURL, seed, systemWallet, systemWalletSeed, tokenCode, tokenBlockchain, tokenIssuer, processorUrl string, requestPublicKey interface{}, privateKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64, store *storage.KeysPSQL) *ATWalletService {
 
 	return &ATWalletService{
 		baseWalletURL:    baseWalletURL,
@@ -256,6 +391,13 @@ func NewATWalletService(baseWalletURL, seed string, requestPublicKey interface{}
 		tokenTimeToLive:  tokenTimeToLive,
 		seed:             seed,
 		store:            store,
+		systemWallet:     systemWallet,
+		systemWalletSeed: systemWalletSeed,
+		tokenCode:        tokenCode,
+		tokenBlockchain:  tokenBlockchain,
+		tokenIssuer:      tokenIssuer,
+		privateKey:       privateKey,
+		processorUrl:     processorUrl,
 	}
 }
 
@@ -367,7 +509,7 @@ func (service ATWalletService) BuildStellarTransactionHash(addressOrSeed, assetI
 	return nil, nil
 }
 
-func (service ATWalletService) BuildStellarTransactionText(addressOrSeed, assetIssuer, destination, memo string, amount float64) (io.ReadCloser, error) {
+func (service ATWalletService) BuildStellarTransactionText(addressOrSeed, assetIssuer, Code, destination, memo string, amount float64) (io.ReadCloser, error) {
 	kp, err := keypair.Parse(addressOrSeed)
 	if err != nil {
 		return nil, fmt.Errorf("can't parse sender key, error: %v", err)
@@ -381,7 +523,7 @@ func (service ATWalletService) BuildStellarTransactionText(addressOrSeed, assetI
 	op := stellar.Payment{
 		Destination:   destination,
 		Amount:        fmt.Sprintf("%f", amount),
-		Asset:         stellar.CreditAsset{Code: "ATUSD", Issuer: assetIssuer},
+		Asset:         stellar.CreditAsset{Code: Code, Issuer: assetIssuer},
 		SourceAccount: sourceAccount.AccountID,
 	}
 	tx, err := stellar.NewTransaction(

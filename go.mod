@@ -6,6 +6,8 @@ require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/go-openapi/runtime v0.24.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
+	github.com/golang-jwt/jwt v3.2.1+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lestrrat-go/jwx v1.2.25
