@@ -39,10 +39,13 @@ type ATWalletService struct {
 	systemWallet     string
 	systemWalletSeed string
 
-	tokenCode       string
-	tokenBlockchain string
-	tokenIssuer     string
-	processorUrl    string
+	tokenCode              string
+	tokenAsset             string
+	tokenBlockchain        string
+	tokenIssuer            string
+	processorUrl           string
+	processorAdminMerchant string
+	processorAdminExternal string
 }
 
 type TokenPayload struct {
@@ -62,6 +65,37 @@ type MintData struct {
 type MintTokenResponse struct {
 	Issuer string
 	TxHash string
+}
+
+type ProcessingCredentialDeposit struct {
+	Amount     float64 `json:"amount"`
+	Blockchain string  `json:"blockchain"`
+	Asset      string  `json:"asset"`
+	Issuer     string  `json:"issuer"`
+}
+
+type ProcessorDepositResponse struct {
+	WalletAddress string `json:"wallet_address"`
+	Memo          string `json:"memo"`
+	URL           string `json:"url"`
+	Id            string `json:"id"`
+}
+
+type ProcessingCredentialWithdraw struct {
+	Amount        float64 `json:"amount"`
+	Blockchain    string  `json:"blockchain"`
+	WalletAddress string  `json:"wallet_address"`
+	Asset         string  `json:"asset"`
+	Issuer        string  `json:"issuer"`
+	Memo          string  `json:"memo"`
+}
+
+type ProcessorWithdrawResponse struct {
+	TransactionHash string `json:"result"`
+}
+
+type DeleteWithdrawResponse struct {
+	Status string `json:"status"`
 }
 
 func (service ATWalletService) CreateToken(externalID, merchantID string) (string, error) {
@@ -85,7 +119,7 @@ func (service ATWalletService) MintTokensOnProcessing(externalID, merchantID, am
 	if err != nil {
 		return err
 	}
-	var mintData = MintData{Code: service.tokenCode, Blockchain: service.tokenBlockchain, Amount: amount, Issuer: service.tokenIssuer, Type: "FT", ReceivingWalletID: externalID}
+	var mintData = MintData{Code: service.tokenCode, Blockchain: service.tokenBlockchain, Amount: amount, Issuer: service.tokenIssuer, Type: "", ReceivingWalletID: externalID}
 	mintDataParsed, err := json.Marshal(mintData)
 	r, err := http.NewRequest("POST", service.processorUrl+"/token_mint", bytes.NewBuffer(mintDataParsed))
 	if err != nil {
@@ -114,6 +148,97 @@ func (service ATWalletService) MintTokensOnProcessing(externalID, merchantID, am
 	return nil
 }
 
+func (service ATWalletService) DepositTokensOnProcessing(externalID, merchantID string, amount float64) (string, error) {
+	token, err := service.CreateToken(externalID, merchantID)
+	if err != nil {
+		return "", err
+	}
+	var mintData = ProcessingCredentialDeposit{Asset: service.tokenAsset, Blockchain: service.tokenBlockchain, Amount: amount, Issuer: service.tokenIssuer}
+	mintDataParsed, err := json.Marshal(mintData)
+	r, err := http.NewRequest("POST", service.processorUrl+"/deposit", bytes.NewBuffer(mintDataParsed))
+	if err != nil {
+		return "", err
+	}
+
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Authorization", token)
+
+	client := &http.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+	var depositResponse ProcessorDepositResponse
+	err = json.NewDecoder(res.Body).Decode(&depositResponse)
+	if err != nil {
+		return "", err
+	}
+	log.Println(depositResponse.WalletAddress)
+	return depositResponse.WalletAddress, nil
+}
+
+func (service ATWalletService) WithdrawTokensOnProcessing(wallet, externalID, merchantID string, amount float64) (string, error) {
+	token, err := service.CreateToken(service.processorAdminExternal, service.processorAdminMerchant)
+	if err != nil {
+		return "", err
+	}
+	var mintData = ProcessingCredentialWithdraw{Asset: service.tokenAsset, Blockchain: service.tokenBlockchain, Amount: amount, Issuer: service.tokenIssuer, WalletAddress: wallet}
+	mintDataParsed, err := json.Marshal(mintData)
+	r, err := http.NewRequest("POST", service.processorUrl+"/withdraw", bytes.NewBuffer(mintDataParsed))
+	if err != nil {
+		return "", err
+	}
+
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Authorization", token)
+
+	client := &http.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+	var withdrawResponse ProcessorWithdrawResponse
+	err = json.NewDecoder(res.Body).Decode(&withdrawResponse)
+	if err != nil {
+		return "", err
+	}
+	log.Println(withdrawResponse.TransactionHash)
+	return withdrawResponse.TransactionHash, nil
+}
+
+func (service ATWalletService) UpdateWithdrawTokensOnProcessing(guid, externalID, merchantID string, amount float64) (string, error) {
+	token, err := service.CreateToken(service.processorAdminExternal, service.processorAdminMerchant)
+	if err != nil {
+		return "", err
+	}
+	r, err := http.NewRequest("PUT", service.processorUrl+"/withdraw/"+guid, nil)
+	if err != nil {
+		return "", err
+	}
+
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Authorization", token)
+
+	client := &http.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+	var withdrawResponse DeleteWithdrawResponse
+	err = json.NewDecoder(res.Body).Decode(&withdrawResponse)
+	if err != nil {
+		return "", err
+	}
+	log.Println(withdrawResponse.Status)
+	return withdrawResponse.Status, nil
+}
+
 func (service ATWalletService) ProcessDeposit(Seed, Address, Issuer, Code, externalID, merchantID string, amount float64) error {
 	stellarTransactionText, err := service.BuildStellarTransactionText(Seed, Issuer, Code, service.systemWallet, "", amount)
 	if err != nil {
@@ -131,6 +256,40 @@ func (service ATWalletService) ProcessDeposit(Seed, Address, Issuer, Code, exter
 		}
 		return err
 	}
+
+	// deposit
+	wallet, err := service.DepositTokensOnProcessing(externalID, merchantID, amount)
+	if err != nil {
+		//Send back funds if failed to receive on processing
+		_, err := service.BuildStellarTransactionText(service.systemWalletSeed, Issuer, Code, Address, "", amount)
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	// Withdraw
+	guid, err := service.WithdrawTokensOnProcessing(wallet, externalID, merchantID, amount)
+	if err != nil {
+		//Send back funds if failed to receive on processing
+		_, err := service.BuildStellarTransactionText(service.systemWalletSeed, Issuer, Code, Address, "", amount)
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	// update withdraw
+	status, err := service.UpdateWithdrawTokensOnProcessing(guid, externalID, merchantID, amount)
+	if err != nil {
+		//Send back funds if failed to receive on processing
+		_, err := service.BuildStellarTransactionText(service.systemWalletSeed, Issuer, Code, Address, "", amount)
+		if err != nil {
+			return err
+		}
+		return err
+	}
+	fmt.Println(status)
 	return nil
 }
 func (service ATWalletService) ListenAndServe() {
@@ -392,22 +551,25 @@ func (service ATWalletService) GetBalance(jwtToken, token string) (*UserPlatform
 	return &userPlatformResponse, nil
 }
 
-func NewATWalletService(baseWalletURL, seed, systemWallet, systemWalletSeed, tokenCode, tokenBlockchain, tokenIssuer, processorUrl string, requestPublicKey interface{}, privateKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64, store *storage.KeysPSQL) *ATWalletService {
+func NewATWalletService(baseWalletURL, seed, systemWallet, systemWalletSeed, tokenCode, tokenAsset, tokenBlockchain, tokenIssuer, processorUrl, processorAdminMerchant, processorAdminExternal string, requestPublicKey interface{}, privateKey interface{}, appGUID uuid.UUID, tokenTimeToLive int64, store *storage.KeysPSQL) *ATWalletService {
 
 	return &ATWalletService{
-		baseWalletURL:    baseWalletURL,
-		requestPublicKey: requestPublicKey,
-		appGUID:          appGUID,
-		tokenTimeToLive:  tokenTimeToLive,
-		seed:             seed,
-		store:            store,
-		systemWallet:     systemWallet,
-		systemWalletSeed: systemWalletSeed,
-		tokenCode:        tokenCode,
-		tokenBlockchain:  tokenBlockchain,
-		tokenIssuer:      tokenIssuer,
-		privateKey:       privateKey,
-		processorUrl:     processorUrl,
+		baseWalletURL:          baseWalletURL,
+		requestPublicKey:       requestPublicKey,
+		appGUID:                appGUID,
+		tokenTimeToLive:        tokenTimeToLive,
+		seed:                   seed,
+		store:                  store,
+		systemWallet:           systemWallet,
+		systemWalletSeed:       systemWalletSeed,
+		tokenCode:              tokenCode,
+		tokenAsset:             tokenAsset,
+		tokenBlockchain:        tokenBlockchain,
+		tokenIssuer:            tokenIssuer,
+		privateKey:             privateKey,
+		processorUrl:           processorUrl,
+		processorAdminMerchant: processorAdminMerchant,
+		processorAdminExternal: processorAdminExternal,
 	}
 }
 

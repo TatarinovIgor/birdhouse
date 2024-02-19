@@ -85,6 +85,10 @@ func main() {
 	if tokenCode == "" {
 		log.Fatal("$TOKEN_CODE env variable must be set")
 	}
+	tokenAsset := os.Getenv("TOKEN_ASSET")
+	if tokenAsset == "" {
+		log.Fatal("$TOKEN_ASSET env variable must be set")
+	}
 	tokenBlockchain := os.Getenv("TOKEN_BLOCKCHAIN")
 	if tokenBlockchain == "" {
 		log.Fatal("$TOKEN_BLOCKCHAIN env variable must be set")
@@ -129,7 +133,7 @@ func main() {
 		log.Fatalf("could not make store for Wallets, error: %v", err)
 	}
 
-	atWalletService := service.NewATWalletService(basePath, seed, systemWallet, systemWalletSeed, tokenCode, tokenBlockchain, tokenIssuer, processorUrl, pub, private, appGUID, tokenTimeToLive, store)
+	atWalletService := service.NewATWalletService(basePath, seed, systemWallet, systemWalletSeed, tokenCode, tokenAsset, tokenBlockchain, tokenIssuer, processorUrl, "aaef4567-b438-48a4-9a3a-f3a730b0e1ec", "aaef4567-b438-48a4-9a3a-f3a730b0e1ec-bhtoken", pub, private, appGUID, tokenTimeToLive, store)
 	//telegramService := telegramservice.NewTelegramService(bot, atWalletService, walletUrl, walletKey)
 
 	//db := internal.DBConnect()
