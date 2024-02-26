@@ -835,6 +835,75 @@ func (service ATWalletService) CreateStellarDeposit(externalId, merchantId, bloc
 	return res, nil
 }
 
+func (service ATWalletService) CreateStellarWithdraw(externalId, merchantId, blockchain string) (InteractiveResp, error) {
+
+	walletAddress, walletSeed, err := service.GetExistingWallet(externalId, merchantId, blockchain)
+
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+
+	wellKnownResp, err := http.Get("https://gollum-sep24.armenotech.net/gollum/api/v1/sep0024/info")
+	homeDomain := "gollum-sep24.armenotech.net"
+	clientDomain := "demo-wallet-server.stellar.org"
+	singingKey := "GBU5DCUJV5CNGNWHG4ABGDI37AMXEQFKCRBPY7YYRYRVKTIPF35P6CJE" //ToDo fetch from toml
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	_, err = ioutil.ReadAll(wellKnownResp.Body)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	sep0010Resp, err := http.Get("https://" + homeDomain + "/gollum/api/v1/sep0010?account=" + walletAddress + "&home_domain=" + homeDomain + "&client_domain=" + clientDomain)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	sep0010, err := ioutil.ReadAll(sep0010Resp.Body)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	var transaction Transaction
+	err = json.Unmarshal(sep0010, &transaction)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	token, err := SignTransaction(walletSeed, singingKey, transaction.Transaction)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+
+	client := &http.Client{}
+
+	form := url.Values{}
+	form.Add("asset_code", "ATUSD")
+	form.Add("account", walletAddress)
+	form.Add("lang", "en")
+	form.Add("claimable_balance_supported", "false")
+
+	bearer := "Bearer " + token
+
+	interactiveReq, err := http.NewRequest("POST", "https://gollum-sep24.armenotech.net/gollum/api/v1/sep0024/transactions/withdraw/interactive", strings.NewReader(form.Encode()))
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	interactiveReq.Header.Add("Authorization", bearer)
+	interactiveReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := client.Do(interactiveReq)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	res := InteractiveResp{}
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return InteractiveResp{}, err
+	}
+	return res, nil
+}
+
 func SignTransaction(Seed, SigningKey, XDR string) (string, error) {
 	kp, err := keypair.Parse(Seed)
 	if err != nil {

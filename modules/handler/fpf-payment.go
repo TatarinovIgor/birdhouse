@@ -16,17 +16,32 @@ func MakeFPFLinkForWallet(atWallet *service.ATWalletService, isDeposit bool) htt
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		deposit, err := atWallet.CreateStellarDeposit(DepositRequest.ExternalID, DepositRequest.MerchantID, DepositRequest.Blockchain)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "could not perform deposit", http.StatusBadRequest)
-			return
-		}
-		err = json.NewEncoder(w).Encode(deposit)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "could not parse response from server", http.StatusInternalServerError)
-			return
+		if isDeposit {
+			deposit, err := atWallet.CreateStellarDeposit(DepositRequest.ExternalID, DepositRequest.MerchantID, DepositRequest.Blockchain)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "could not perform deposit", http.StatusBadRequest)
+				return
+			}
+			err = json.NewEncoder(w).Encode(deposit)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "could not parse response from server", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			withdraw, err := atWallet.CreateStellarWithdraw(DepositRequest.ExternalID, DepositRequest.MerchantID, DepositRequest.Blockchain)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "could not perform deposit", http.StatusBadRequest)
+				return
+			}
+			err = json.NewEncoder(w).Encode(withdraw)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "could not parse response from server", http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 }
