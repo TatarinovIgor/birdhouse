@@ -767,6 +767,9 @@ type InteractiveResp struct {
 
 // ToDo refactor
 func (service ATWalletService) CreateStellarDeposit(externalId, merchantId, blockchain string) (InteractiveResp, error) {
+	if (externalId == "") || (merchantId == "") {
+		return InteractiveResp{}, nil
+	}
 
 	walletAddress, walletSeed, err := service.GetExistingWallet(externalId, merchantId, blockchain)
 
